@@ -2,11 +2,11 @@ package group20tup.matchingengine.model.recursos;
 
 public interface OperacionesCL2 {
 	
-	public int buscar(Object elemento);
-	public Object devolver(int posicion);
-	public void eliminar(int posicion);
-	public void limpiar();
-	public boolean estaVacia();		
-	public int tamanio();
+	int buscar(Object elemento);
+	Object devolver(int posicion);
+	void eliminar(int posicion);
+	void limpiar();
+	boolean estaVacia();
+	int tamanio();
 	
 }

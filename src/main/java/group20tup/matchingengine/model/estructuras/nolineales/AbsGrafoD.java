@@ -137,10 +137,10 @@ public abstract class AbsGrafoD extends AbsGrafo implements OperacionesGD {
 		for(int k=0;k<ordenGrafo;k++){
 			for(int i=0;i<ordenGrafo;i++){
 				for(int j=0;j<ordenGrafo;j++){
-					if(((Double)matrizCostoF.devolver(i, k)).doubleValue()+((Double)matrizCostoF.devolver(k, j)).doubleValue()<((Double)matrizCostoF.devolver(i, j)).doubleValue()){
-						costo=new Double(((Double)matrizCostoF.devolver(i, k)).doubleValue()+((Double)matrizCostoF.devolver(k, j)).doubleValue());
+					if((Double) matrizCostoF.devolver(i, k) + (Double) matrizCostoF.devolver(k, j) < (Double) matrizCostoF.devolver(i, j)){
+						costo= (Double) matrizCostoF.devolver(i, k) + (Double) matrizCostoF.devolver(k, j);
 						matrizCostoF.actualizar(costo, i, j);
-						matrizCaminoF.actualizar(new Integer(k), i, j);//para obtener el camino de Floyd.
+						matrizCaminoF.actualizar(k, i, j);//para obtener el camino de Floyd.
 					}
 				}
 			}
@@ -162,7 +162,7 @@ public abstract class AbsGrafoD extends AbsGrafo implements OperacionesGD {
 
 	
 	public void muestraCaminoFloyd(int origen, int destino){
-		double hayCamino = ((Double)this.matrizCostoF.devolver(origen, destino)).doubleValue();
+		double hayCamino = (Double) this.matrizCostoF.devolver(origen, destino);
 		if(hayCamino!=infinito) {
 			System.out.print("Camino entre "+origen+" y "+destino+": ");
 			System.out.print(origen);
@@ -177,7 +177,7 @@ public abstract class AbsGrafoD extends AbsGrafo implements OperacionesGD {
 	private void buscarCaminoFloyd(int i, int j){
 		Object valor=matrizCaminoF.devolver(i, j);
 		if(valor!=null){
-			int k=((Integer)valor).intValue();
+			int k= (Integer) valor;
 			buscarCaminoFloyd(i,k);
 			System.out.print(" "+k);
 			buscarCaminoFloyd(k,j);

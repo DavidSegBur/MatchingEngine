@@ -9,8 +9,8 @@ package group20tup.matchingengine.model.recursos;
  * @author arc
  */
 public interface OperacionesCL1 {
-    public void meter(Object elemento);
-    public Object sacar();
-    public void limpiar();
-    public boolean estaVacia();
+    void meter(Object elemento);
+    Object sacar();
+    void limpiar();
+    boolean estaVacia();
 }

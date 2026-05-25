@@ -96,4 +96,8 @@ public abstract class AbsGrafo implements OperacionesG {
 			}
 		}		
 	}
+
+	public MatrizGrafo getMatrizCosto() {
+		return matrizCosto;
+	}
 }

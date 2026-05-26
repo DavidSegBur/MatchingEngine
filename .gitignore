@@ -1,6 +1,10 @@
 tests/
 tests/**/*.class
 target/
+.agents/
+.opencode/
+AGENTS.md
+skills-lock.json
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

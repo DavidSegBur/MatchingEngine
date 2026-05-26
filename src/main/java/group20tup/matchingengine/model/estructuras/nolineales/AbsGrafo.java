@@ -8,7 +8,12 @@ import group20tup.matchingengine.model.recursos.OperacionesG;
 public abstract class AbsGrafo implements OperacionesG {
 	protected MatrizGrafo matrizCosto;
 	protected int ordenGrafo;
-	protected static double infinito=10000;
+
+	public void setOrdenGrafo(int ordenGrafo) {
+		this.ordenGrafo = ordenGrafo;
+	}
+
+	protected static double infinito= Double.POSITIVE_INFINITY;
 	
 	public AbsGrafo(int ordenGrafo) {
 		this.ordenGrafo = ordenGrafo;

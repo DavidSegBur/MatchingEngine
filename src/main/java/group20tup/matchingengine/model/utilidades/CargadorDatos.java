@@ -63,7 +63,7 @@ public class CargadorDatos {
             int filaInterna = 0;
             final double VELOCIDAD_METROS_POR_SEGUNDO = 25.0 / 3.6;
 
-            int totalEsquinasCargadas = this.listaEsquinas.tamanio();
+            grafo.setOrdenGrafo(this.listaEsquinas.tamanio());
 
             while ((linea = br.readLine()) != null) {
                 if (linea.trim().isEmpty()) {
@@ -71,7 +71,7 @@ public class CargadorDatos {
                 }
 
                 String[] valores = linea.split(",");
-                for (int columnaInterna = 0; columnaInterna < totalEsquinasCargadas; columnaInterna++) {
+                for (int columnaInterna = 0; columnaInterna < grafo.getOrden(); columnaInterna++) {
                     if (columnaInterna + 1 >= valores.length) {
                         break;
                     }
@@ -91,7 +91,7 @@ public class CargadorDatos {
 
                         grafo.getMatrizCosto().actualizar(etaSegundos, filaInterna, columnaInterna);
                     } else {
-                        grafo.getMatrizCosto().actualizar(10000.0, filaInterna, columnaInterna);
+                        grafo.getMatrizCosto().actualizar(Double.POSITIVE_INFINITY, filaInterna, columnaInterna);
                     }
                 }
                 ++filaInterna;
@@ -107,7 +107,7 @@ public class CargadorDatos {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
 
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) *
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                 Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));

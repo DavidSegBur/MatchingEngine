@@ -6,7 +6,8 @@ package group20tup.matchingengine.model.estructuras.lineales;
  *     Esta version es una modificada de la version generica
  *     que la catedra de AyED proporciona. Esto se hizo para evitar
  *     el overhead del casteo de tipos de datos y el Unboxing/boxing
- *     de primitivos
+ *     de primitivos. Los errores de posicion se reportan mediante
+ *     excepciones en lugar de imprimir por consola.
  * </p>
  * @author Ivan
  * @version 1.1
@@ -55,18 +56,19 @@ public class MatrizArr {
 	 * @param elemento, nuevo valor
 	 * @param posicionFila, fila en la que se ubicara el nuevo valor
 	 * @param posicionColumna, columna en la que se ubicara el nuevo valor
+	 * @throws IndexOutOfBoundsException si la fila o columna estan fuera de rango
 	 */
-	public void actualizar(double elemento, int posicionFila, int posicionColumna){
+	public void actualizar(double elemento, int posicionFila, int posicionColumna) throws IndexOutOfBoundsException {
 		if (posicionFila>=getNroFilas() || posicionFila<0){
-				System.out.println("Error actualiza. Posicion fila inexistente ");
-			}else{
-				if (posicionColumna>=getNroColumnas() || posicionColumna<0){
-					System.out.println("Error actualiza. Posicion columna inexistente ");
-				}else{
-					this.matriz[posicionFila][posicionColumna]=elemento;
-				}				
-			}
+			throw new IndexOutOfBoundsException("Posicion fila inexistente: " + posicionFila);
 		}
+
+		if (posicionColumna>=getNroColumnas() || posicionColumna<0){
+			throw new IndexOutOfBoundsException("Posicion columna inexistente: " + posicionColumna);
+		}
+
+		this.matriz[posicionFila][posicionColumna]=elemento;
+	}
 
 
 	/**
@@ -74,19 +76,17 @@ public class MatrizArr {
  	 * @param posicionFila, fila en la que se encuentra el valor
 	 * @param posicionColumna, columna en la que se encuentra el valor
 	 * @return el valor de la matriz en las posiciones indicadas
+	 * @throws IndexOutOfBoundsException si la fila o columna estan fuera de rango
 	 */
-	public double devolver(int posicionFila, int posicionColumna){
-		double elemento = 0.0;
-
+	public double devolver(int posicionFila, int posicionColumna) throws IndexOutOfBoundsException {
 		if (posicionFila>=getNroFilas() || posicionFila<0){
-			System.out.println("Error devuelve. Posicion fila inexistente ");
-		}else{
-			if (posicionColumna>=getNroColumnas() || posicionColumna<0){
-				System.out.println("Error devuelve. Posicion columna inexistente ");
-			}else{
-				elemento = this.matriz[posicionFila][posicionColumna];
-			}				
-		}		
-		return elemento;
+			throw new IndexOutOfBoundsException("Posicion fila inexistente: " + posicionFila);
+		}
+
+		if (posicionColumna>=getNroColumnas() || posicionColumna<0){
+			throw new IndexOutOfBoundsException("Posicion columna inexistente: " + posicionColumna);
+		}
+
+		return this.matriz[posicionFila][posicionColumna];
 	}	
 }

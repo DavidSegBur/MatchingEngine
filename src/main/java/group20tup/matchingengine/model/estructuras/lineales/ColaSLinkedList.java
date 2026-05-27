@@ -1,16 +1,13 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package group20tup.matchingengine.model.estructuras.lineales;
-
 
 import group20tup.matchingengine.model.recursos.Nodo;
 import group20tup.matchingengine.model.recursos.OperacionesCL1;
 
 /**
+ * Estructura de datos de Cola con lista simplemente enlazada que implementa OperacionesCL1
+ * <p>
  *
- * @author arc
+ * </p>
  */
 public class ColaSLinkedList implements OperacionesCL1 {
     protected Nodo frenteC,finalC;

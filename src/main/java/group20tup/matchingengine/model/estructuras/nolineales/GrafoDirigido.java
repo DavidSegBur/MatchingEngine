@@ -2,7 +2,7 @@ package group20tup.matchingengine.model.estructuras.nolineales;
 
 import java.util.Scanner;
 
-public class GrafoDirigido extends AbsGrafoD{
+public class GrafoDirigido extends AbsGrafo{
 	public GrafoDirigido(int ordenGrafo){
 		super(ordenGrafo);
 	}
@@ -26,8 +26,6 @@ public class GrafoDirigido extends AbsGrafoD{
 					this.matrizCosto.actualizar(infinito, i, j);
 				}
 			}
-		} 
-   	
+		} 	
 	}
-
 }

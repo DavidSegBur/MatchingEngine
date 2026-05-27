@@ -1,6 +1,7 @@
 package group20.matchingengine;
 
-import group20tup.matchingengine.model.utilidades.BuscadorCaminos;
+import group20tup.matchingengine.model.utilidades.CalculadorRutas;
+import group20tup.matchingengine.model.utilidades.DijkstraRutas;
 import group20tup.matchingengine.model.utilidades.CargadorDatos;
 import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
 import group20tup.matchingengine.model.recursos.MetadataNodo;
@@ -50,14 +51,14 @@ public class MatchingEngineTest {
             System.out.println("\n[ÉXITO] El motor lee de forma nativa sin dependencias externas.");
 
             System.out.println("\n====== EJECUTANDO PRUEBA DE DIJKSTRA ======");
-            BuscadorCaminos buscador = new BuscadorCaminos();
+            DijkstraRutas buscador = new DijkstraRutas(mapaSalta);
 
             // Vamos a simular un viaje desde el índice 0 hacia el índice 15 (o los que gustes probar)
             int indiceOrigen = 0;
             int indiceDestino = 47;
 
             long tiempoInicio = System.nanoTime();
-            int[] rutaCalculada = buscador.calcularDijkstra(mapaSalta, indiceOrigen, indiceDestino);
+            int[] rutaCalculada = buscador.calcularRuta(indiceOrigen, indiceDestino);
             long tiempoFin = System.nanoTime();
 
             if (rutaCalculada.length > 0) {

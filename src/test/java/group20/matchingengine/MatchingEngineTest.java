@@ -54,7 +54,7 @@ public class MatchingEngineTest {
 
             // Vamos a simular un viaje desde el índice 0 hacia el índice 15 (o los que gustes probar)
             int indiceOrigen = 0;
-            int indiceDestino = 6;
+            int indiceDestino = 47;
 
             long tiempoInicio = System.nanoTime();
             int[] rutaCalculada = buscador.calcularDijkstra(mapaSalta, indiceOrigen, indiceDestino);

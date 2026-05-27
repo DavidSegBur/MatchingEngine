@@ -7,6 +7,8 @@ import group20tup.matchingengine.model.recursos.MetadataNodo;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.nio.charset.StandardCharsets;
 
 public class CargadorDatos {
@@ -15,7 +17,7 @@ public class CargadorDatos {
 
     public CargadorDatos() {
         this.listaEsquinas = new ListaDoubleLinkedL();
-        this.mapeoIndicesAIdOSM = new long[2000];
+        this.mapeoIndicesAIdOSM = new long[0]; // Will be resized in cargarMetadatos
     }
 
     public void cargarMetadatos(String pathResourceMetadata) throws IllegalArgumentException {
@@ -24,31 +26,43 @@ public class CargadorDatos {
             throw new IllegalArgumentException("No se encontro el archivo de metadatos en: " + pathResourceMetadata);
         }
 
+        // Read all lines into a list first to avoid stream closing issues
+        List<String> lineas = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            br.readLine();
+            br.readLine(); // Skip header
             String linea;
-            int contadorSecuencial = 0;
             while ((linea = br.readLine()) != null) {
-                if (linea.trim().isEmpty()) {
-                    continue;
-                }
-
-                String[] campos = linea.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
-                if (campos.length >= 6) {
-                    long idOSM = Long.parseLong(campos[0].trim());
-                    double latitud = Double.parseDouble(campos[1].trim());
-                    double longitud = Double.parseDouble(campos[2].trim());
-                    String nombreEsquina = campos[5].replace("\"", "").trim();
-                    MetadataNodo nodoMeta = new MetadataNodo(contadorSecuencial, idOSM, latitud, longitud, nombreEsquina);
-                    this.listaEsquinas.insertar(nodoMeta, contadorSecuencial);
-                    this.mapeoIndicesAIdOSM[contadorSecuencial] = idOSM;
-                    ++contadorSecuencial;
+                if (!linea.trim().isEmpty()) {
+                    lineas.add(linea);
                 }
             }
-            System.out.println("[Éxito] Se cargaron " + contadorSecuencial + " esquinas en la Lista Enlazada.");
         } catch (Exception ex) {
-            System.err.println("No se pudo encontrar el archivo para cargar los metadatos");
+            System.err.println("No se pudo encontrar el archivo para cargar los metadatos: " + ex.getMessage());
+            throw new IllegalArgumentException("Error cargando metadatos", ex);
         }
+        
+        // Resize the array to actual count
+        this.mapeoIndicesAIdOSM = new long[lineas.size()];
+        
+        // Process the lines
+        int contadorSecuencial = 0;
+        for (String linea : lineas) {
+            String[] campos = linea.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+            if (campos.length >= 6) {
+                long idOSM = Long.parseLong(campos[0].trim());
+                double latitud = Double.parseDouble(campos[1].trim());
+                double longitud = Double.parseDouble(campos[2].trim());
+                String calleA = campos[3].replace("\"", "").trim();
+                String calleB = campos[4].replace("\"", "").trim();
+                String nombreEsquina = campos[5].replace("\"", "").trim();
+                MetadataNodo nodoMeta = new MetadataNodo(contadorSecuencial, idOSM, latitud, longitud, calleA, calleB, nombreEsquina);
+                this.listaEsquinas.insertar(nodoMeta, contadorSecuencial);
+                this.mapeoIndicesAIdOSM[contadorSecuencial] = idOSM;
+                ++contadorSecuencial;
+            }
+        }
+        
+        System.out.println("[Éxito] Se cargaron " + contadorSecuencial + " esquinas en la Lista Enlazada.");
     }
 
     public void cargarMatrizVial(String pathResourceMatriz, GrafoDirigido grafo) throws IllegalArgumentException {
@@ -98,7 +112,8 @@ public class CargadorDatos {
             }
             System.out.println("[Éxito] Matriz de adyacencia de " + filaInterna + "x" + filaInterna + " convertida a pesos ETA (segundos).");
         } catch (Exception ex) {
-            System.err.println("No se puedo encontrar el archivo para cargar la matriz");
+            System.err.println("No se pudo encontrar el archivo para cargar la matriz: " + ex.getMessage());
+            throw new IllegalArgumentException("Error cargando matriz vial", ex);
         }
     }
 

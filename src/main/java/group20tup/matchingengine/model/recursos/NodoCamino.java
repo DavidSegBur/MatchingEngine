@@ -1,8 +1,13 @@
 package group20tup.matchingengine.model.recursos;
 
 public class NodoCamino {
-    private int idFilaArray;
-    private double etaAcumulado;
+    private final int idFilaArray;
+    private final double etaAcumulado;
+
+    public NodoCamino(int idFilaArray, double etaAcumulado) {
+        this.idFilaArray = idFilaArray;
+        this.etaAcumulado = etaAcumulado;
+    }
 
     public int getIdFilaArray() {
         return idFilaArray;
@@ -10,10 +15,5 @@ public class NodoCamino {
 
     public double getEtaAcumulado() {
         return etaAcumulado;
-    }
-
-    public NodoCamino(int idFilaArray, double etaAcumulado) {
-        this.idFilaArray = idFilaArray;
-        this.etaAcumulado = etaAcumulado;
     }
 }

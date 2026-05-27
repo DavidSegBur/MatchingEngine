@@ -1,17 +1,21 @@
 package group20tup.matchingengine.model.recursos;
 
 public class MetadataNodo {
-    private int indiceInterno;
-    private long idOSM;
-    private double latitud;
-    private double longitud;
-    private String nombreEsquina;
+    private final int indiceInterno;
+    private final long idOSM;
+    private final double latitud;
+    private final double longitud;
+    private final String calleA;
+    private final String calleB;
+    private final String nombreEsquina;
 
-    public MetadataNodo(int indiceInterno, long idOSM, double latitud, double longitud, String nombreEsquina) {
+    public MetadataNodo(int indiceInterno, long idOSM, double latitud, double longitud, String calleA, String calleB, String nombreEsquina) {
         this.indiceInterno = indiceInterno;
         this.idOSM = idOSM;
         this.latitud = latitud;
         this.longitud = longitud;
+        this.calleA = calleA;
+        this.calleB = calleB;
         this.nombreEsquina = nombreEsquina;
     }
 
@@ -29,6 +33,14 @@ public class MetadataNodo {
 
     public double getLongitud() {
         return longitud;
+    }
+
+    public String getCalleA() {
+        return calleA;
+    }
+
+    public String getCalleB() {
+        return calleB;
     }
 
     public String getNombreEsquina() {

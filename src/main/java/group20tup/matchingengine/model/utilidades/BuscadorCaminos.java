@@ -2,11 +2,7 @@ package group20tup.matchingengine.model.utilidades;
 
 import group20tup.matchingengine.model.estructuras.lineales.ColaNodosCamino;
 import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
-import group20tup.matchingengine.model.recursos.Nodo;
 import group20tup.matchingengine.model.recursos.NodoCamino;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class BuscadorCaminos {
     private static final double INFINITO = Double.POSITIVE_INFINITY;
@@ -45,7 +41,7 @@ public class BuscadorCaminos {
             for (int v = 0; v < n; v++) {
                 if (!visitados[v]) {
                     double pesoArista = (Double) grafo.getMatrizCosto().devolver(u, v);
-                    if (pesoArista < INFINITO) {
+                    if (pesoArista > 0.0 && pesoArista < INFINITO) {
                         double nuevaDistancia = distancias[u] + pesoArista;
 
                         if (nuevaDistancia < distancias[v]) {
@@ -66,20 +62,23 @@ public class BuscadorCaminos {
     }
 
     private int[] reconstruirRuta(int[] padres, int origen, int destino) {
-        List<Integer> rutaInversa = new ArrayList<>();
+        // First pass: count path length
+        int length = 0;
         int actual = destino;
-
         while (actual != -1) {
-            rutaInversa.add(actual);
+            length++;
             actual = padres[actual];
         }
-
-        int[] rutaFinal = new int[rutaInversa.size()];
-        int posicion = 0;
-        for (int i = rutaInversa.size() - 1; i >= 0; i--) {
-            rutaFinal[posicion++] = rutaInversa.get(i);
+        
+        // Second pass: fill array in reverse
+        int[] rutaFinal = new int[length];
+        int posicion = length - 1;
+        actual = destino;
+        while (actual != -1) {
+            rutaFinal[posicion--] = actual;
+            actual = padres[actual];
         }
-
+        
         return rutaFinal;
     }
 }

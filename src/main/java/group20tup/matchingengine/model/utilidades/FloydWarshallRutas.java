@@ -3,31 +3,34 @@ package group20tup.matchingengine.model.utilidades;
 import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
 
 /**
- * Floyd-Warshall algorithm implementation for all-pairs shortest paths.
- * Precomputes all shortest paths during construction for O(1) path queries.
- * 
- * <p>Note: Uses raw arrays for storage to comply with project constraints.
- * The path matrix uses int[][] for vertex indices (no casting issues).
- * The cost matrix uses double[] for distances.</p>
+ * Implementacion del algoritmo de Floyd-Warshall para el camino mas corto de todos los pares.
+ * Precalcula todos los caminos cortos durante la construccion para las solicitudes de caminos O(1).
+ *
+ * <p>
+ *     Nota: Usa arreglos primitivos para almacenar para cumplir con las restricciones del proyecto.
+ *     La matriz de caminos usa int[][] para los indices de los vertices (sin problemas de casteo).
+ *     La matriz de costo usa double[] para las distancias.
+ * </p>
+ *
  */
 public class FloydWarshallRutas implements CalculadorRutas {
-    private final double[][] costos;   // Minimum distances between nodes
-    private final int[][] siguiente;   // Next hop for path reconstruction
-    private final int n;               // Number of nodes
+    private final double[][] costos;   // Distancias minimas entre nodos
+    private final int[][] siguiente;   // Siguiente salto para la construccion de caminos
+    private final int n;               // Numero de nodos
     private static final double INFINITO = Double.POSITIVE_INFINITY;
 
     /**
-     * Constructs the Floyd-Warshall calculator from a graph.
-     * Precomputes all-pairs shortest paths in O(n³) time.
+     * Construye el calculador de Floyd-Warshall para un grafo.
+     * Precalcula los caminos mas cortos de todos los pares en el tiempo O(n²)
      * 
-     * @param grafo The directed graph to process
+     * @param grafo El grafo dirigido a procesar
      */
     public FloydWarshallRutas(GrafoDirigido grafo) {
         this.n = grafo.getOrden();
         this.costos = new double[n][n];
         this.siguiente = new int[n][n];
         
-        // Initialize cost and next matrices
+        // Incializa las matrices de costo y siguiente
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 costos[i][j] = grafo.getMatrizCosto().devolver(i, j);
@@ -41,7 +44,7 @@ public class FloydWarshallRutas implements CalculadorRutas {
             }
         }
         
-        // Floyd-Warshall algorithm
+        // Algoritmo de Floyd-Warshall
         for (int k = 0; k < n; k++) {
             for (int i = 0; i < n; i++) {
                 for (int j = 0; j < n; j++) {
@@ -55,12 +58,12 @@ public class FloydWarshallRutas implements CalculadorRutas {
     }
 
     /**
-     * Calculates the shortest path from origin to destination.
-     * Path reconstruction is O(L) where L is path length.
+     * Calcula el camino mas corto desde el origen al destino.
+     * La reconsruccion del camino es O(L) donde L es el tamaño del camino
      * 
-     * @param origen  Origin node index
-     * @param destino Destination node index
-     * @return Array of node indices representing the path, or empty array if no path exists
+     * @param origen  Indice del nodo de Origen
+     * @param destino Indice del nodo de destino
+     * @return El arreglo de indices de nodos representando el camino minimo, o uno vacio si no existe
      */
     @Override
     public int[] calcularRuta(int origen, int destino) {

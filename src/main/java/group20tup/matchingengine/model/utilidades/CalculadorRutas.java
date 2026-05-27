@@ -3,16 +3,16 @@ package group20tup.matchingengine.model.utilidades;
 import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
 
 /**
- * Interface for path calculation algorithms.
- * Different implementations can be swapped in/out.
+ * Interfaz para los algoritmos de calculo de camino.
+ * Diferentes implementaciones pueden ser intercambiadas.
  */
 public interface CalculadorRutas {
     /**
-     * Calculates the shortest path from origin to destination.
+     * Calcula el camino mas corto desde el origen al destino.
      * 
-     * @param origen  Origin node index
-     * @param destino Destination node index
-     * @return Array of node indices representing the path, or empty array if no path exists
+     * @param origen  Indice del nodo de origen
+     * @param destino Indice del nodo destino
+     * @return El Arreglo de indices de nodos representando el camino mas corto, o un arreglo vacio si no existe
      */
     int[] calcularRuta(int origen, int destino);
 }

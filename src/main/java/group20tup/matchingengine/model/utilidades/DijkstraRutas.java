@@ -4,29 +4,29 @@ import group20tup.matchingengine.model.estructuras.nolineales.MonticuloBinario;
 import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
 
 /**
- * Dijkstra's algorithm implementation for single-source shortest paths.
- * Uses a binary min-heap for efficient priority queue operations.
- * Calculates the shortest path from a given origin to destination node.
+ * Implementacion del algoritmo de Dijkstra para caminos mas cortos de una sola fuente.
+ * Usa un monticulo binario minimo para operaciones de cola de prioridad eficientes.
+ * Calcula el camino mas corto desde un punto de origen dado a un nodo de destino.
  */
 public class DijkstraRutas implements CalculadorRutas {
     private static final double INFINITO = Double.POSITIVE_INFINITY;
     private final GrafoDirigido grafo;
 
     /**
-     * Constructs a Dijkstra path finder for the given graph.
+     * Construye un buscador de caminos Dijkstra para el grafo dado.
      * 
-     * @param grafo The directed graph to process
+     * @param grafo El grafo dirigido a procesar
      */
     public DijkstraRutas(GrafoDirigido grafo) {
         this.grafo = grafo;
     }
 
     /**
-     * Calculates the shortest path from origin to destination using Dijkstra's algorithm.
+     * Calcula el camino mas corto desde el origen al destino usando el algoritmo de Dijkstra.
      * 
-     * @param origen  Origin node index
-     * @param destino Destination node index
-     * @return Array of node indices representing the path, or empty array if no path exists
+     * @param origen  Indice del nodo origen
+     * @param destino Indice del nodo de destino
+     * @return El arreglo de indices de nodos representando el camino, o un arreglo vacio si no lo hay
      */
     @Override
     public int[] calcularRuta(int origen, int destino) {
@@ -59,7 +59,7 @@ public class DijkstraRutas implements CalculadorRutas {
             }
             visitados[u] = true;
 
-            // Explore neighbors
+            // Explora los vecinos
             for (int v = 0; v < n; v++) {
                 if (!visitados[v]) {
                     double pesoArista = grafo.getMatrizCosto().devolver(u, v);
@@ -84,15 +84,15 @@ public class DijkstraRutas implements CalculadorRutas {
     }
 
     /**
-     * Reconstructs the path from parent pointers.
+     * Reconstruye el camino desde los punteros de los padres.
      * 
-     * @param padres Array of parent indices
-     * @param origen Origin node index
-     * @param destino Destination node index
-     * @return Path from origin to destination as array of node indices
+     * @param padres Arreglo de indices padres
+     * @param origen Indice del nodo de origen
+     * @param destino Indice del nodo de destino
+     * @return Camino desde origen al destino como un arreglo de indices de nodos
      */
     private int[] reconstruirRuta(int[] padres, int origen, int destino) {
-        // First pass: count path length
+        // Primer paso: contar el largo del camino
         int length = 0;
         int actual = destino;
         while (actual != -1) {
@@ -100,7 +100,7 @@ public class DijkstraRutas implements CalculadorRutas {
             actual = padres[actual];
         }
         
-        // Second pass: fill array in reverse
+        // Segundo paso: llenar el arreglo desde el fondo
         int[] rutaFinal = new int[length];
         int posicion = length - 1;
         actual = destino;

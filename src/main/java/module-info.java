@@ -3,7 +3,6 @@ module group20tup.matchingengine {
     requires javafx.fxml;
 
     requires org.controlsfx.controls;
-    requires java.naming;
 
     opens group20tup.matchingengine.controller to javafx.fxml;
     exports group20tup.matchingengine;

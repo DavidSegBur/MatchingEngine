@@ -1,6 +1,6 @@
 package group20tup.matchingengine.model.utilidades;
 
-import group20tup.matchingengine.model.estructuras.lineales.MonticuloBinario;
+import group20tup.matchingengine.model.estructuras.nolineales.MonticuloBinario;
 import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
 
 /**

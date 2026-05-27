@@ -1,13 +1,16 @@
 package group20tup.matchingengine.model.estructuras.lineales;
 
+import java.util.Objects;
+
 /**
  * Estructura de datos de Lista Doblemente Enlazada
  * <p>
  *     Esta clase hereda de la clase Lista1DLinkedL e
- *     implementa el metodo abstracto iguales().
+ *     implementa el metodo abstracto iguales() utilizando
+ *     Objects.equals() para una comparacion segura contra null.
  * </p>
- * @author Catedra de AyED
- * @version 1.0
+ * @author Ivan
+ * @version 1.1
  */
 public class ListaDoubleLinkedL extends Lista1DLinkedL{
 
@@ -19,7 +22,7 @@ public class ListaDoubleLinkedL extends Lista1DLinkedL{
 	 */
 	@Override
 	public boolean iguales(Object elementoL, Object elemento) {
-		return (boolean)elementoL==(boolean)elemento;
+		return Objects.equals(elementoL, elemento);
 	}
 
 }

@@ -1,7 +1,8 @@
-package group20tup.matchingengine.model.utilidades;
+package group20tup.matchingengine.model.utilidades.calculadorescaminos;
 
-import group20tup.matchingengine.model.estructuras.nolineales.MonticuloBinario;
-import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
+import group20tup.matchingengine.model.estructuras.nolineales.arboles.MonticuloBinario;
+import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoDirigido;
+import group20tup.matchingengine.model.utilidades.CalculadorRutas;
 
 /**
  * Implementacion del algoritmo de Dijkstra para caminos mas cortos de una sola fuente.

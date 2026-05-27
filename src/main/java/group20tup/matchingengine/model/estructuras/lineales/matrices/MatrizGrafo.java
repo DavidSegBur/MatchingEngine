@@ -1,4 +1,4 @@
-package group20tup.matchingengine.model.estructuras.lineales;
+package group20tup.matchingengine.model.estructuras.lineales.matrices;
 
 /**
  * Matriz utilizada en la estructura de datos Grafo (clase AbsGrafo)

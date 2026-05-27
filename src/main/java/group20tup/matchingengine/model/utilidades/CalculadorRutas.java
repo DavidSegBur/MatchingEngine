@@ -1,7 +1,5 @@
 package group20tup.matchingengine.model.utilidades;
 
-import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
-
 /**
  * Interfaz para los algoritmos de calculo de camino.
  * Diferentes implementaciones pueden ser intercambiadas.

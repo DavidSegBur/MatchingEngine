@@ -1,4 +1,4 @@
-package group20tup.matchingengine.model.recursos;
+package group20tup.matchingengine.model.recursos.operaciones;
 
 /**
  * Interfaz que define las operaciones basicas de recorrido de un grafo.

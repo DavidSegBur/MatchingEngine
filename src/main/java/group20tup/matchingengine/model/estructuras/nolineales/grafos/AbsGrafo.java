@@ -1,9 +1,9 @@
-package group20tup.matchingengine.model.estructuras.nolineales;
+package group20tup.matchingengine.model.estructuras.nolineales.grafos;
 
-import group20tup.matchingengine.model.estructuras.lineales.ColaSLinkedList;
-import group20tup.matchingengine.model.estructuras.lineales.ListaDoubleLinkedL;
-import group20tup.matchingengine.model.estructuras.lineales.MatrizGrafo;
-import group20tup.matchingengine.model.recursos.OperacionesG;
+import group20tup.matchingengine.model.estructuras.lineales.listas.ColaSLinkedList;
+import group20tup.matchingengine.model.estructuras.lineales.listas.ListaDoubleLinkedL;
+import group20tup.matchingengine.model.estructuras.lineales.matrices.MatrizGrafo;
+import group20tup.matchingengine.model.recursos.operaciones.OperacionesG;
 
 /**
  * Clase abstracta que representa un grafo dirigido con matriz de adyacencia.

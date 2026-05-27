@@ -1,4 +1,4 @@
-package group20tup.matchingengine.model.estructuras.nolineales;
+package group20tup.matchingengine.model.estructuras.nolineales.grafos;
 
 import java.util.Scanner;
 

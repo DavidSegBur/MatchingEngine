@@ -1,4 +1,4 @@
-package group20tup.matchingengine.model.recursos;
+package group20tup.matchingengine.model.recursos.operaciones;
 
 /**
  * Interfaz que completa las operaciones de una lista comun

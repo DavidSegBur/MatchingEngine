@@ -1,6 +1,6 @@
-package group20tup.matchingengine.model.estructuras.lineales;
-import group20tup.matchingengine.model.recursos.NodoDoble;
-import group20tup.matchingengine.model.recursos.OperacionesCL3;
+package group20tup.matchingengine.model.estructuras.lineales.listas;
+import group20tup.matchingengine.model.recursos.nodos.NodoDoble;
+import group20tup.matchingengine.model.recursos.operaciones.OperacionesCL3;
 
 /**
  * Lista Doblemente Enlazada que hereda de Lista0DLinkedL y OperacionesCL3.

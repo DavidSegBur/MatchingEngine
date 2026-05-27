@@ -1,4 +1,4 @@
-package group20tup.matchingengine.model.estructuras.lineales;
+package group20tup.matchingengine.model.estructuras.lineales.matrices;
 
 /**
  * Matriz base para usar en estructuras no lineales (grafos, arboles)

@@ -1,9 +1,8 @@
 package group20tup.matchingengine;
 
-import group20tup.matchingengine.model.utilidades.CalculadorRutas;
-import group20tup.matchingengine.model.utilidades.DijkstraRutas;
+import group20tup.matchingengine.model.utilidades.calculadorescaminos.DijkstraRutas;
 import group20tup.matchingengine.model.utilidades.CargadorDatos;
-import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
+import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoDirigido;
 import group20tup.matchingengine.model.recursos.MetadataNodo;
 
 /**

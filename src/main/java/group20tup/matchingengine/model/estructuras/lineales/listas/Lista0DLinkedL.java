@@ -1,7 +1,7 @@
-package group20tup.matchingengine.model.estructuras.lineales;
+package group20tup.matchingengine.model.estructuras.lineales.listas;
 
-import group20tup.matchingengine.model.recursos.NodoDoble;
-import group20tup.matchingengine.model.recursos.OperacionesCL2;
+import group20tup.matchingengine.model.recursos.nodos.NodoDoble;
+import group20tup.matchingengine.model.recursos.operaciones.OperacionesCL2;
 
 /**
  * Clase base de lista doblemente enlazada que implementa la interfaz OperacionesCL2

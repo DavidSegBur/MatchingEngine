@@ -1,9 +1,9 @@
-package group20tup.matchingengine.model.estructuras.lineales;
+package group20tup.matchingengine.model.estructuras.lineales.listas;
 
 import java.util.NoSuchElementException;
 
-import group20tup.matchingengine.model.recursos.Nodo;
-import group20tup.matchingengine.model.recursos.OperacionesCL1;
+import group20tup.matchingengine.model.recursos.nodos.Nodo;
+import group20tup.matchingengine.model.recursos.operaciones.OperacionesCL1;
 
 /**
  * Estructura de datos de Cola con lista simplemente enlazada que implementa OperacionesCL1

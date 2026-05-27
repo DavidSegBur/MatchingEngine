@@ -1,4 +1,4 @@
-package group20tup.matchingengine.model.estructuras.lineales;
+package group20tup.matchingengine.model.estructuras.lineales.listas;
 
 import java.util.Objects;
 

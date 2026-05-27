@@ -1,4 +1,4 @@
-package group20tup.matchingengine.model.recursos;
+package group20tup.matchingengine.model.recursos.nodos;
 
 /**
  * Nodo de una lista simplemente enlazada.

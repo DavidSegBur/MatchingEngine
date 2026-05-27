@@ -1,7 +1,7 @@
 package group20tup.matchingengine.model.utilidades;
 
-import group20tup.matchingengine.model.estructuras.lineales.ListaDoubleLinkedL;
-import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
+import group20tup.matchingengine.model.estructuras.lineales.listas.ListaDoubleLinkedL;
+import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoDirigido;
 import group20tup.matchingengine.model.recursos.MetadataNodo;
 
 import java.io.BufferedReader;

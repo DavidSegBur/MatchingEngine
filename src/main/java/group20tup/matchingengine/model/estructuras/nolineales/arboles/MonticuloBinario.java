@@ -1,4 +1,4 @@
-package group20tup.matchingengine.model.estructuras.nolineales;
+package group20tup.matchingengine.model.estructuras.nolineales.arboles;
 
 /**
  * Implementacion de monticulo binario minimo usando arreglos.

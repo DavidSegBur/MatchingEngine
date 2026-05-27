@@ -1,6 +1,7 @@
-package group20tup.matchingengine.model.utilidades;
+package group20tup.matchingengine.model.utilidades.calculadorescaminos;
 
-import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
+import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoDirigido;
+import group20tup.matchingengine.model.utilidades.CalculadorRutas;
 
 /**
  * Implementacion del algoritmo de Floyd-Warshall para el camino mas corto de todos los pares.

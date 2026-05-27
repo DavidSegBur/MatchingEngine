@@ -1,4 +1,4 @@
-package group20.matchingengine;
+package group20tup.matchingengine;
 
 import group20tup.matchingengine.model.utilidades.CalculadorRutas;
 import group20tup.matchingengine.model.utilidades.DijkstraRutas;
@@ -6,8 +6,27 @@ import group20tup.matchingengine.model.utilidades.CargadorDatos;
 import group20tup.matchingengine.model.estructuras.nolineales.GrafoDirigido;
 import group20tup.matchingengine.model.recursos.MetadataNodo;
 
+/**
+ * Prueba de carga de datos y ejecucion del algoritmo Dijkstra sobre el grafo vial de Salta.
+ * <p>
+ *     Verifica que el motor lea los archivos CSV de metadatos y matriz de adyacencia,
+ *     construya el grafo dirigido con pesos ETA, y calcule una ruta valida entre dos
+ *     nodos utilizando el algoritmo de Dijkstra implementado con un monticulo binario.
+ * </p>
+ * @author Ivan
+ * @version 1.0
+ */
 public class MatchingEngineTest {
 
+    /**
+     * Punto de entrada de la prueba.
+     * <p>
+     *     Carga los metadatos de 1665 esquinas, transforma la matriz de adyacencia
+     *     en una matriz de costos ETA, y ejecuta Dijkstra desde el nodo 0 al nodo 47.
+     *     Imprime la ruta encontrada con los nombres de las esquinas.
+     * </p>
+     * @param args Argumentos de linea de comandos (no utilizados)
+     */
     public static void main(String[] args) {
         System.out.println("====== INICIANDO TEST LOCAL DE CARGA (FUERA DE GIT) ======");
 

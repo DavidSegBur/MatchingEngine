@@ -1,9 +1,11 @@
-package group20tup.matchingengine.model.estructuras.lineales;
+package group20tup.matchingengine.model.estructuras.nolineales;
 
 /**
- * Binary min-heap implementation using raw arrays.
- * Stores node indices and their associated priority values.
- * No decreaseKey operation - uses lazy deletion with duplicate entries.
+ * Implementacion de monticulo binario minimo usando arreglos.
+ * Almacena los indices de los nodos y su valores de prioridad asociados.
+ * Sin operacion decreaseKey - usa delegacion perezosa con entradas duplicadas.
+ * @author Ivan
+ * @version 1.0
  */
 public class MonticuloBinario {
     private int[] heap;
@@ -12,9 +14,9 @@ public class MonticuloBinario {
     private int capacity;
 
     /**
-     * Creates a binary min-heap with the specified capacity.
-     * 
-     * @param capacity Maximum number of elements
+     * Crea un monticulo binario minimo con la capacidad especificada.
+     *
+     * @param capacity Numero maximo de elementos
      */
     public MonticuloBinario(int capacity) {
         this.capacity = capacity;
@@ -24,14 +26,14 @@ public class MonticuloBinario {
     }
 
     /**
-     * Inserts a node with its priority into the heap.
+     * Inserta un nodo con su prioridad en el monticulo.
      * 
-     * @param nodo     Node index
-     * @param prioridad Priority value (lower = higher priority)
+     * @param nodo     Indice del nodo
+     * @param prioridad Valor de prioridad (mas bajo valor = mas alta prioridad)
      */
     public void insertar(int nodo, double prioridad) {
         if (size >= capacity) {
-            // Simple resize - in practice could be more sophisticated
+            // Redimensionado simple - en practica podria ser mas sofisticado
             int newCapacity = capacity * 2;
             int[] newHeap = new int[newCapacity];
             double[] newPrioridades = new double[newCapacity];
@@ -50,9 +52,9 @@ public class MonticuloBinario {
     }
 
     /**
-     * Removes and returns the node with minimum priority.
+     * Elimina y retorna el nodo con la prioridad minima.
      * 
-     * @return Node index with minimum priority, or -1 if heap is empty
+     * @return Indice del nodo con prioridad minima, o -1 si el monticulo esta vacio
      */
     public int extraerMin() {
         if (size <= 0) {
@@ -73,27 +75,28 @@ public class MonticuloBinario {
     }
 
     /**
-     * Checks if the heap is empty.
+     * Revisa si el monticulo esta vacio.
      * 
-     * @return true if heap is empty
+     * @return verdadero si el monticulo esta vacio
      */
     public boolean estaVacia() {
         return size == 0;
     }
 
     /**
-     * Returns the number of elements in the heap.
-     * 
-     * @return Current size
+     * Retorna el numero de elementos en el monticulo.
+     *
+     * @return El tamaño actual
      */
     public int tamanio() {
         return size;
     }
 
     /**
-     * Moves element at index i up the heap until heap property is satisfied.
+     * Mueve el elemento en el indice i hacia arriba en el monticulo hasta que
+     * la propiedad del monticulo es la correcta.
      * 
-     * @param i Index to bubble up
+     * @param i Indice para subir (bubble up)
      */
     private void subir(int i) {
         while (i > 0 && prioridades[parent(i)] > prioridades[i]) {
@@ -103,9 +106,10 @@ public class MonticuloBinario {
     }
 
     /**
-     * Moves element at index i down the heap until heap property is satisfied.
+     * Mueve el elemento en el indice i hacia abajo en el monticulo hasta que la
+     * propiedad del monticulo sea la correcta.
      * 
-     * @param i Index to sink down
+     * @param i Indice para hundir (sink down)
      */
     private void hundir(int i) {
         int menor = i;
@@ -125,40 +129,40 @@ public class MonticuloBinario {
     }
 
     /**
-     * Returns parent index of node at index i.
+     * Retorna el indice padre del nodo en el indice i.
      * 
-     * @param i Child index
-     * @return Parent index
+     * @param i Indice hijo
+     * @return Indice padre
      */
     private int parent(int i) {
         return (i - 1) / 2;
     }
 
     /**
-     * Returns left child index of node at index i.
+     * Retorna el indice del hijo izquierdo del nodo en el indice i.
      * 
-     * @param i Parent index
-     * @return Left child index
+     * @param i Indice padre
+     * @return Indice del hijo izquierdo
      */
     private int left(int i) {
         return 2 * i + 1;
     }
 
     /**
-     * Returns right child index of node at index i.
+     * Retorna el indice del hijo derecho del nodo en el indice i.
      * 
-     * @param i Parent index
-     * @return Right child index
+     * @param i Indice padre
+     * @return Indice del hijo derecho
      */
     private int right(int i) {
         return 2 * i + 2;
     }
 
     /**
-     * Swaps two elements in the heap.
+     * Intercambia dos elementos en el monticulo.
      * 
-     * @param i First index
-     * @param j Second index
+     * @param i Primer indice
+     * @param j Segundo indice
      */
     private void intercambiar(int i, int j) {
         int tempNodo = heap[i];

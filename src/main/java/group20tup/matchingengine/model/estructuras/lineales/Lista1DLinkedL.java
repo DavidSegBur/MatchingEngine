@@ -2,8 +2,6 @@ package group20tup.matchingengine.model.estructuras.lineales;
 import group20tup.matchingengine.model.recursos.NodoDoble;
 import group20tup.matchingengine.model.recursos.OperacionesCL3;
 
-import javax.naming.OperationNotSupportedException;
-
 /**
  * Lista Doblemente Enlazada que hereda de Lista0DLinkedL y OperacionesCL3.
  * <p>

@@ -5,8 +5,8 @@ import group20tup.matchingengine.model.recursos.operaciones.OperacionesCL3;
 /**
  * Lista Doblemente Enlazada que hereda de Lista0DLinkedL y OperacionesCL3.
  * <p>
- *     Esta clase se utiliza en el grafo dirigido y en la clase
- *     de CargadorDatos. Se lo modifico ligeramente para que lance
+ *     Esta clase se utiliza en el grafo dirigido y en la subclase
+ *     GrafoMapa. Se la modifico ligeramente para que lance
  *     errores apropiados en vez de un simple System.out.prinln()
  * </p>
  * @author Ivan

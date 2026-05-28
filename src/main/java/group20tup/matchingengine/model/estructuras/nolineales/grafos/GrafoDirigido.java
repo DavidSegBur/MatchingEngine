@@ -8,8 +8,8 @@ import java.util.Scanner;
  *     Extiende la clase abstracta {@code AbsGrafo} y proporciona una
  *     implementacion del metodo {@code cargarGrafo()} que permite la
  *     carga manual de costos mediante entrada estandar (consola).
- *     Para uso en produccion, los datos se cargan a traves de
- *     {@code CargadorDatos.cargarMatrizVial()}.
+ *     Para uso en produccion utilizar la subclase {@code GrafoMapa}
+ *     que se auto-carga desde los archivos CSV de recursos.
  * </p>
  * @author Ivan
  * @version 1.0
@@ -31,7 +31,8 @@ public class GrafoDirigido extends AbsGrafo{
 	 *     Un valor de -1 indica ausencia de conexion.
 	 * </p>
 	 * @deprecated Metodo interactivo solo para propositos academicos.
-	 *             En produccion utilizar {@code CargadorDatos.cargarMatrizVial()}.
+	 *             En produccion utilizar {@code GrafoMapa} que se auto-carga
+	 *             desde los archivos CSV.
 	 */
 	@Override
 	@Deprecated

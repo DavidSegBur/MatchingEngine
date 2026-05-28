@@ -1,7 +1,7 @@
-package group20tup.matchingengine.model.utilidades;
+package group20tup.matchingengine.model.estructuras.nolineales.grafos;
 
 import group20tup.matchingengine.model.estructuras.lineales.listas.ListaDoubleLinkedL;
-import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoDirigido;
+import group20tup.matchingengine.model.estructuras.lineales.matrices.MatrizGrafo;
 import group20tup.matchingengine.model.recursos.MetadataNodo;
 
 import java.io.BufferedReader;
@@ -12,48 +12,71 @@ import java.util.List;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Cargador de datos viales desde archivos CSV.
+ * Implementacion concreta de un grafo dirigido que se auto-carga
+ * desde los archivos CSV de metadatos y matriz de adyacencia.
  * <p>
- *     Lee los archivos de metadatos de nodos y la matriz de adyacencia
- *     desde los recursos del proyecto, construye la lista enlazada de
- *     esquinas y llena la matriz de costos del grafo con los pesos ETA
- *     calculados mediante la formula de Haversine.
+ *     Extiende {@code GrafoDirigido} e incorpora la logica de carga
+ *     que anteriormente residia en {@code CargadorDatos}, eliminando
+ *     la necesidad de una clase auxiliar externa.
  * </p>
  * @author Ivan
  * @version 1.0
  */
-public class CargadorDatos {
+public class GrafoMapa extends GrafoDirigido {
+    private static final String RUTA_METADATOS =
+            "/group20tup/matchingengine/data/meta_datos_nodos_2k.csv";
+    private static final String RUTA_MATRIZ =
+            "/group20tup/matchingengine/data/matriz_nodos_2k.csv";
+
     private ListaDoubleLinkedL listaEsquinas;
     private long[] mapeoIndicesAIdOSM;
 
     /**
-     * Construye un cargador de datos vacio.
-     * Inicializa la lista de esquinas y el arreglo de mapeo.
+     * Construye un GrafoMapa vacio.
+     * <p>
+     *     La carga real de datos se realiza al invocar {@code cargarGrafo()},
+     *     el cual lee los archivos CSV definidos como constantes internas.
+     * </p>
      */
-    public CargadorDatos() {
+    public GrafoMapa() {
+        super(0);
         this.listaEsquinas = new ListaDoubleLinkedL();
         this.mapeoIndicesAIdOSM = new long[0];
     }
 
     /**
-     * Carga los metadatos de las esquinas desde un archivo CSV.
+     * Carga los metadatos de las esquinas y la matriz vial desde los
+     * archivos CSV incrustados en los recursos del proyecto.
+     * <p>
+     *     Reemplaza el uso de {@code CargadorDatos} llamando directamente
+     *     a sus metodos homonimos como operaciones privadas de esta clase.
+     * </p>
+     */
+    @Override
+    public void cargarGrafo() {
+        cargarMetadatos();
+        this.ordenGrafo = this.listaEsquinas.tamanio();
+        this.matrizCosto = new MatrizGrafo(this.ordenGrafo);
+        cargarMatrizVial();
+    }
+
+    /**
+     * Carga los metadatos de las esquinas desde el archivo CSV.
      * <p>
      *     El archivo debe tener formato: ID_Nodo,Latitud,Longitud,Calle_A,Calle_B,Nombre_Esquina.
      *     Los nodos se almacenan secuencialmente en la lista enlazada con su indice interno.
      * </p>
-     * @param pathResourceMetadata Ruta al recurso CSV de metadatos
      * @throws IllegalArgumentException si el archivo no existe o hay error de lectura
      */
-    public void cargarMetadatos(String pathResourceMetadata) throws IllegalArgumentException {
-        InputStream is = getClass().getResourceAsStream(pathResourceMetadata);
+    private void cargarMetadatos() throws IllegalArgumentException {
+        InputStream is = getClass().getResourceAsStream(RUTA_METADATOS);
         if (is == null) {
-            throw new IllegalArgumentException("No se encontro el archivo de metadatos en: " + pathResourceMetadata);
+            throw new IllegalArgumentException("No se encontro el archivo de metadatos en: " + RUTA_METADATOS);
         }
 
-        // Lee todas las lineas en una lista primero para evitar problemas de cierres de flujo (stream closing)
         List<String> lineas = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            br.readLine(); // Se salta el cabecero
+            br.readLine();
             String linea;
             while ((linea = br.readLine()) != null) {
                 if (!linea.trim().isEmpty()) {
@@ -63,11 +86,9 @@ public class CargadorDatos {
         } catch (Exception ex) {
             System.err.println("No se pudo encontrar el archivo para cargar los metadatos: " + ex.getMessage());
         }
-        
-        // Redimensiona el arreglo al conteo real
+
         this.mapeoIndicesAIdOSM = new long[lineas.size()];
-        
-        // Procesar las lineas
+
         int contadorSecuencial = 0;
         for (String linea : lineas) {
             String[] campos = linea.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
@@ -84,8 +105,8 @@ public class CargadorDatos {
                 ++contadorSecuencial;
             }
         }
-        
-        System.out.println("[Éxito] Se cargaron " + contadorSecuencial + " esquinas en la Lista Enlazada.");
+
+        System.out.println("[Exito] Se cargaron " + contadorSecuencial + " esquinas en la Lista Enlazada.");
     }
 
     /**
@@ -95,14 +116,12 @@ public class CargadorDatos {
      *     calculando la distancia Haversine entre nodos y dividiendo por
      *     una velocidad constante de 25 km/h.
      * </p>
-     * @param pathResourceMatriz Ruta al recurso CSV de la matriz
-     * @param grafo Grafo dirigido donde se almacenaran los costos
      * @throws IllegalArgumentException si el archivo no existe o hay error de lectura
      */
-    public void cargarMatrizVial(String pathResourceMatriz, GrafoDirigido grafo) throws IllegalArgumentException {
-        InputStream is = getClass().getResourceAsStream(pathResourceMatriz);
+    private void cargarMatrizVial() throws IllegalArgumentException {
+        InputStream is = getClass().getResourceAsStream(RUTA_MATRIZ);
         if (is == null) {
-            throw new IllegalArgumentException("No se encontro el archivo de matriz en: " + pathResourceMatriz);
+            throw new IllegalArgumentException("No se encontro el archivo de matriz en: " + RUTA_MATRIZ);
         }
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
@@ -111,15 +130,13 @@ public class CargadorDatos {
             int filaInterna = 0;
             final double VELOCIDAD_METROS_POR_SEGUNDO = 25.0 / 3.6;
 
-            grafo.setOrdenGrafo(this.listaEsquinas.tamanio());
-
             while ((linea = br.readLine()) != null) {
                 if (linea.trim().isEmpty()) {
                     continue;
                 }
 
                 String[] valores = linea.split(",");
-                for (int columnaInterna = 0; columnaInterna < grafo.getOrden(); columnaInterna++) {
+                for (int columnaInterna = 0; columnaInterna < this.ordenGrafo; columnaInterna++) {
                     if (columnaInterna + 1 >= valores.length) {
                         break;
                     }
@@ -137,27 +154,19 @@ public class CargadorDatos {
 
                         double etaSegundos = distanciaMetros / VELOCIDAD_METROS_POR_SEGUNDO;
 
-                        grafo.getMatrizCosto().actualizar(etaSegundos, filaInterna, columnaInterna);
+                        this.matrizCosto.actualizar(etaSegundos, filaInterna, columnaInterna);
                     } else {
-                        grafo.getMatrizCosto().actualizar(Double.POSITIVE_INFINITY, filaInterna, columnaInterna);
+                        this.matrizCosto.actualizar(Double.POSITIVE_INFINITY, filaInterna, columnaInterna);
                     }
                 }
                 ++filaInterna;
             }
-            System.out.println("[Éxito] Matriz de adyacencia de " + filaInterna + "x" + filaInterna + " convertida a pesos ETA (segundos).");
+            System.out.println("[Exito] Matriz de adyacencia de " + filaInterna + "x" + filaInterna + " convertida a pesos ETA (segundos).");
         } catch (Exception ex) {
             System.err.println("No se pudo encontrar el archivo para cargar la matriz: " + ex.getMessage());
         }
     }
 
-    /**
-     * Calcula la distancia entre dos coordenadas geograficas usando la formula de Haversine.
-     * @param lat1 Latitud del punto 1 en grados decimales
-     * @param lon1 Longitud del punto 1 en grados decimales
-     * @param lat2 Latitud del punto 2 en grados decimales
-     * @param lon2 Longitud del punto 2 en grados decimales
-     * @return Distancia en metros
-     */
     private double calcularHaversine(double lat1, double lon1, double lat2, double lon2) {
         final double RADIO_TIERRA_METROS = 6371000.0;
         double dLat = Math.toRadians(lat2 - lat1);

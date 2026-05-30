@@ -159,7 +159,9 @@ public class SistemaViajes {
             Vehiculo v = (Vehiculo) vehiculos.devolver(i);
             if (v.isDisponible()) {
                 double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
-                colaDespacho.insertar(i, eta);
+                if (eta < INFINITO) {
+                    colaDespacho.insertar(i, eta);
+                }
             }
         }
 
@@ -225,32 +227,49 @@ public class SistemaViajes {
     }
 
     /**
+     * Elimina un vehiculo del sistema (ej. cuando queda en un estado no recuperable).
+     * @param v Vehiculo a eliminar
+     */
+    public void removerVehiculo(Vehiculo v) {
+        int idx = buscarIndiceVehiculo(v);
+        if (idx != -1) {
+            vehiculos.eliminar(idx);
+        }
+    }
+
+    /**
      * Ejecuta la recogida de un pasajero cuando el vehiculo llega a su ubicacion.
      * <p>
-     *     Remueve al usuario del mapa, cambia el estado del vehiculo a EN_VIAJE,
-     *     selecciona un destino aleatorio en el grafo, calcula la ruta correspondiente
-     *     y registra el vehiculo en la cola de ocupados con su ETA como prioridad.
+     *     Primero busca un destino aleatorio alcanzable mediante Dijkstra.
+     *     Si encuentra uno, remueve al usuario del mapa, cambia el estado del
+     *     vehiculo a EN_VIAJE, asigna la ruta calculada y registra el vehiculo
+     *     en la cola de ocupados. Si no encuentra un destino alcanzable tras
+     *     100 intentos, remueve al usuario igualmente pero retorna {@code false}
+     *     para que el llamador maneje la situacion.
      * </p>
      * @param vehiculo Vehiculo que realizo la recogida
+     * @return true si se encontro un destino y el viaje continua, false en caso contrario
      */
-    public void realizarPickup(Vehiculo vehiculo) {
+    public boolean realizarPickup(Vehiculo vehiculo) {
+        Random rnd = new Random();
+        int destino;
+        int[] ruta = new int[0];
+        for (int intentos = 0; intentos < 100 && ruta.length < 2; intentos++) {
+            destino = rnd.nextInt(grafo.getOrden());
+            if (destino != vehiculo.getNodoActual()) {
+                ruta = ruteador.calcularRuta(vehiculo.getNodoActual(), destino);
+            }
+        }
+
         Usuario usuario = vehiculo.getPasajeroAbordo();
         if (usuario != null) {
             removerUsuario(usuario);
         }
 
-        vehiculo.setEstado(EstadoVehiculo.EN_VIAJE);
+        if (ruta.length >= 2) {
+            vehiculo.setEstado(EstadoVehiculo.EN_VIAJE);
+            vehiculo.setRutaActiva(ruta);
 
-        Random rnd = new Random();
-        int destino;
-        do {
-            destino = rnd.nextInt(grafo.getOrden());
-        } while (destino == vehiculo.getNodoActual());
-
-        int[] ruta = ruteador.calcularRuta(vehiculo.getNodoActual(), destino);
-        vehiculo.setRutaActiva(ruta);
-
-        if (ruta.length > 0) {
             double eta = 0;
             for (int i = 0; i < ruta.length - 1; i++) {
                 eta += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
@@ -259,6 +278,12 @@ public class SistemaViajes {
             if (idx != -1) {
                 colaOcupados.insertar(idx, eta);
             }
+            return true;
+        } else {
+            vehiculo.setEstado(EstadoVehiculo.DISPONIBLE);
+            vehiculo.setPasajeroAbordo(null);
+            vehiculo.setRutaActiva(new int[0]);
+            return false;
         }
     }
 

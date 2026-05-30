@@ -180,9 +180,14 @@ public class GestorSimulacion {
 
             if (v.getIndiceRuta() >= ruta.length - 1 && v.getProgreso() >= 1.0) {
                 if (v.getEstado() == EstadoVehiculo.APROXIMANDO) {
-                    sistema.realizarPickup(v);
-                    System.out.println("[Pickup] Vehiculo " + v.getPatente()
-                            + " recolecto usuario. Dirigiendose a destino aleatorio.");
+                    if (!sistema.realizarPickup(v)) {
+                        sistema.removerVehiculo(v);
+                        System.out.println("[Pickup] Vehiculo " + v.getPatente()
+                                + " no encontro destino alcanzable. Reemplazado.");
+                    } else {
+                        System.out.println("[Pickup] Vehiculo " + v.getPatente()
+                                + " recolecto usuario. Dirigiendose a destino aleatorio.");
+                    }
                 } else if (v.getEstado() == EstadoVehiculo.EN_VIAJE) {
                     sistema.completarTransito(v);
                     System.out.println("[Completado] Vehiculo " + v.getPatente()

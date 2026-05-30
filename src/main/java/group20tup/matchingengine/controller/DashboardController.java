@@ -107,6 +107,26 @@ public class DashboardController {
     }
 
     private void solicitarViajeUI(Usuario usuario) {
+        boolean algunDisponible = false;
+        boolean algunAlcanzable = false;
+        for (int i = 0; i < sistema.totalVehiculos(); i++) {
+            Vehiculo v = sistema.getVehiculo(i);
+            if (v.isDisponible()) {
+                algunDisponible = true;
+                double eta = sistema.calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
+                if (Double.isFinite(eta)) {
+                    algunAlcanzable = true;
+                    break;
+                }
+            }
+        }
+
+        if (algunDisponible && !algunAlcanzable) {
+            sistema.removerUsuario(usuario);
+            lblInfo.setText("El usuario " + usuario.getId() + " es inaccesible.\nFue eliminado del mapa.");
+            return;
+        }
+
         Vehiculo aceptado = sistema.solicitarViaje(usuario, new Random());
         if (aceptado == null) {
             lblInfo.setText("No hay vehiculos disponibles\npara el usuario " + usuario.getId() + ".");

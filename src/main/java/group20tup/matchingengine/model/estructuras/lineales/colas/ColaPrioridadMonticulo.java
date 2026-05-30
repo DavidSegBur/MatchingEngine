@@ -59,6 +59,17 @@ public class ColaPrioridadMonticulo {
     }
 
     /**
+     * Actualiza la prioridad de un elemento en la cola.
+     * Busca el elemento por su valor y reubica su posicion si la nueva
+     * prioridad es menor. No hace nada si el elemento no existe.
+     * @param elemento Indice del elemento a actualizar
+     * @param nuevaPrioridad Nueva prioridad (debe ser menor o igual)
+     */
+    public void actualizarPrioridad(int elemento, double nuevaPrioridad) {
+        heap.decreaseKey(elemento, nuevaPrioridad);
+    }
+
+    /**
      * Elimina todos los elementos de la cola en O(1).
      */
     public void limpiar() {

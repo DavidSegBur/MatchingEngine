@@ -218,39 +218,28 @@ public class DashboardController {
                     v.getPatente(), v.getNodoActual(), nodo.getNombreEsquina()));
             lblBusyQueue.setText("");
         } else {
-            StringBuilder sb = new StringBuilder();
-            sb.append("--- Cola Ocupados ---\n");
+            sistema.reconstruirColaOcupados();
 
-            int n = sistema.totalVehiculos();
-            int[] busyIdx = new int[n];
-            double[] busyETA = new double[n];
-            int busyCount = 0;
-
-            for (int i = 0; i < n; i++) {
-                Vehiculo ocupado = sistema.getVehiculo(i);
-                if (ocupado.getEstado() == EstadoVehiculo.EN_VIAJE) {
-                    double eta = 0;
-                    int[] ruta = ocupado.getRutaActiva();
-                    for (int j = ocupado.getIndiceRuta(); j < ruta.length - 1; j++) {
-                        eta += grafoMapa.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
-                    }
-                    int j = busyCount - 1;
-                    while (j >= 0 && busyETA[j] > eta) {
-                        busyIdx[j + 1] = busyIdx[j];
-                        busyETA[j + 1] = busyETA[j];
-                        j--;
-                    }
-                    busyIdx[j + 1] = i;
-                    busyETA[j + 1] = eta;
-                    busyCount++;
-                }
+            int count = sistema.getColaOcupados().tamanio();
+            int[] sortedIdx = new int[count];
+            for (int i = 0; i < count; i++) {
+                sortedIdx[i] = sistema.getColaOcupados().extraerMin();
             }
 
-            for (int i = 0; i < busyCount; i++) {
-                Vehiculo ocupado = sistema.getVehiculo(busyIdx[i]);
-                double distKm = busyETA[i] * (25.0 / 3.6) / 1000.0;
+            sistema.reconstruirColaOcupados();
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("--- Cola Ocupados ---\n");
+            for (int i = 0; i < count; i++) {
+                Vehiculo ocupado = sistema.getVehiculo(sortedIdx[i]);
+                double eta = 0;
+                int[] ruta = ocupado.getRutaActiva();
+                for (int j = ocupado.getIndiceRuta(); j < ruta.length - 1; j++) {
+                    eta += grafoMapa.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
+                }
+                double distKm = eta * (25.0 / 3.6) / 1000.0;
                 sb.append(ocupado.getPatente())
-                        .append("  ~").append(String.format("%.0f", busyETA[i])).append("s  ")
+                        .append("  ~").append(String.format("%.0f", eta)).append("s  ")
                         .append(String.format("%.1f", distKm)).append("km\n");
             }
 

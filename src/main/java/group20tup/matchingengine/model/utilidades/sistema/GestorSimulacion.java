@@ -138,6 +138,15 @@ public class GestorSimulacion {
             }
 
             avanzarProgreso(v);
+
+            if (v.getEstado() == EstadoVehiculo.EN_VIAJE) {
+                double etaRestante = 0;
+                int[] rutaV = v.getRutaActiva();
+                for (int j = v.getIndiceRuta(); j < rutaV.length - 1; j++) {
+                    etaRestante += grafo.getMatrizCosto().devolver(rutaV[j], rutaV[j + 1]);
+                }
+                sistema.actualizarPrioridadOcupado(i, etaRestante);
+            }
         }
 
         procesarArribos();

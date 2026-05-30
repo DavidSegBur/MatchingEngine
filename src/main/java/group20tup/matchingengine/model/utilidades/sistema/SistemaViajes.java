@@ -341,25 +341,36 @@ public class SistemaViajes {
     }
 
     /**
-     * Reconstruye la cola de ocupados desde cero.
+     * Reconstruye la cola de ocupados desde cero con ETA restante actual.
      * <p>
-     *     Se invoca tras finalizar un viaje para mantener la cola sincronizada
-     *     con los vehiculos actualmente en estado EN_VIAJE.
+     *     Se invoca tras finalizar un viaje o antes de inspeccionar la cola
+     *     para mantener las prioridades sincronizadas con el progreso actual
+     *     de cada vehiculo.
      * </p>
      */
-    private void reconstruirColaOcupados() {
+    public void reconstruirColaOcupados() {
         colaOcupados.limpiar();
         for (int i = 0; i < vehiculos.tamanio(); i++) {
             Vehiculo v = (Vehiculo) vehiculos.devolver(i);
             if (v.getEstado() == EstadoVehiculo.EN_VIAJE) {
                 double eta = 0;
                 int[] ruta = v.getRutaActiva();
-                for (int j = 0; j < ruta.length - 1; j++) {
+                for (int j = v.getIndiceRuta(); j < ruta.length - 1; j++) {
                     eta += grafo.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
                 }
                 colaOcupados.insertar(i, eta);
             }
         }
+    }
+
+    /**
+     * Actualiza la prioridad de un vehiculo en la cola de ocupados.
+     * Se llama en cada tick de simulacion para reflejar el ETA restante.
+     * @param idxVehiculo Indice del vehiculo en la lista
+     * @param nuevaETA Nuevo tiempo restante estimado en segundos
+     */
+    public void actualizarPrioridadOcupado(int idxVehiculo, double nuevaETA) {
+        colaOcupados.actualizarPrioridad(idxVehiculo, nuevaETA);
     }
 
     /**

@@ -93,6 +93,26 @@ public class MonticuloBinario {
     }
 
     /**
+     * Actualiza la prioridad de un elemento en el monticulo (solo decrementos).
+     * Busca linealmente el elemento por su valor, actualiza su prioridad y
+     * lo reubica hacia arriba para mantener la propiedad del monticulo.
+     * Si el elemento no existe o la nueva prioridad es mayor, no hace nada.
+     * @param valor Valor del elemento a actualizar
+     * @param nuevaPrioridad Nueva prioridad (debe ser menor o igual a la actual)
+     */
+    public void decreaseKey(int valor, double nuevaPrioridad) {
+        for (int i = 0; i < size; i++) {
+            if (heap[i] == valor) {
+                if (nuevaPrioridad < prioridades[i]) {
+                    prioridades[i] = nuevaPrioridad;
+                    subir(i);
+                }
+                return;
+            }
+        }
+    }
+
+    /**
      * Reinicia el monticulo eliminando todos los elementos en O(1).
      * Los arreglos subyacentes se reutilizan (se reescribiran al insertar).
      */

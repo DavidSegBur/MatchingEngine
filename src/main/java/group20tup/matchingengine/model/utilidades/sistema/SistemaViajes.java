@@ -7,28 +7,34 @@ import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
 import group20tup.matchingengine.model.utilidades.CalculadorRutas;
+import java.util.Random;
 
 /**
  * Sistema central de despacho y matching de viajes.
  * <p>
- *     Gestiona el ciclo de vida completo de los viajes: registro de
- *     vehiculos y usuarios, solicitud de viaje, cola de prioridad
- *     de despacho (vehiculos disponibles ordenados por ETA),
- *     y cola de vehiculos ocupados ordenados por tiempo restante.
- *     Utiliza exclusivamente las estructuras de datos custom del
- *     proyecto (ListaDoubleLinkedL, ColaPrioridadMonticulo) y los
- *     algoritmos de ruteo (CalculadorRutas).
+ *     Gestiona el ciclo de vida completo de los viajes: registro de vehiculos
+ *     y usuarios, solicitud de viaje con simulacion de rechazo, cola de
+ *     prioridad de despacho (vehiculos disponibles ordenados por ETA), cola
+ *     de vehiculos ocupados ordenados por tiempo restante, calculo de tarifas,
+ *     y transiciones de estado (pickup y finalizacion de viaje). Utiliza
+ *     exclusivamente las estructuras de datos custom del proyecto
+ *     (ListaDoubleLinkedL, ColaPrioridadMonticulo) y los algoritmos de
+ *     ruteo (CalculadorRutas).
  * </p>
  * @author Ivan
- * @version 1.0
+ * @version 2.0
  */
 public class SistemaViajes {
     private static final double INFINITO = Double.POSITIVE_INFINITY;
+    private static final double PROBABILIDAD_RECHAZO = 0.3;
+    private static final double TARIFA_POR_KM = 0.50;
+    private static final double VELOCIDAD_PROMEDIO_M_S = 25.0 / 3.6;
 
     private final GrafoDirigido grafo;
     private final CalculadorRutas ruteador;
     private final ListaDoubleLinkedL vehiculos;
     private final ListaDoubleLinkedL usuarios;
+    private final ColaPrioridadMonticulo colaOcupados;
 
     /**
      * Construye el sistema de viajes con el grafo y el ruteador dados.
@@ -40,6 +46,7 @@ public class SistemaViajes {
         this.ruteador = ruteador;
         this.vehiculos = new ListaDoubleLinkedL();
         this.usuarios = new ListaDoubleLinkedL();
+        this.colaOcupados = new ColaPrioridadMonticulo(20);
     }
 
     /**
@@ -93,20 +100,61 @@ public class SistemaViajes {
     }
 
     /**
-     * Procesa una solicitud de viaje de un usuario.
+     * Devuelve la lista interna de vehiculos.
+     * @return ListaDoubleLinkedL con todos los vehiculos registrados
+     */
+    public ListaDoubleLinkedL getListaVehiculos() {
+        return vehiculos;
+    }
+
+    /**
+     * Devuelve la lista interna de usuarios.
+     * @return ListaDoubleLinkedL con todos los usuarios registrados
+     */
+    public ListaDoubleLinkedL getListaUsuarios() {
+        return usuarios;
+    }
+
+    /**
+     * Devuelve la cola de prioridad de vehiculos ocupados.
+     * @return ColaPrioridadMonticulo con vehiculos en estado EN_VIAJE
+     */
+    public ColaPrioridadMonticulo getColaOcupados() {
+        return colaOcupados;
+    }
+
+    /**
+     * Procesa una solicitud de viaje sin simulacion de rechazo.
      * <p>
      *     Coloca todos los vehiculos disponibles en la cola de despacho
      *     ordenados por su ETA al nodo del usuario (mas cercano primero).
-     *     Simula la evaluacion secuencial hasta que un vehiculo acepta
-     *     el viaje. Cuando acepta, la cola de despacho se destruye.
+     *     Selecciona el primer vehiculo disponible (equivalente a
+     *     probabilidad de rechazo = 0). Cuando acepta, la cola de despacho
+     *     se destruye al salir del metodo.
      * </p>
      * @param usuario Usuario que solicita el viaje
      * @return El vehiculo que acepto el viaje, o null si ninguno acepto
      */
     public Vehiculo solicitarViaje(Usuario usuario) {
+        return solicitarViaje(usuario, null);
+    }
+
+    /**
+     * Procesa una solicitud de viaje con simulacion de rechazo opcional.
+     * <p>
+     *     Coloca todos los vehiculos disponibles en la cola de despacho
+     *     ordenados por su ETA al nodo del usuario (mas cercano primero).
+     *     Si se proporciona un generador aleatorio, cada vehiculo puede
+     *     rechazar el viaje con una probabilidad fija, simulando
+     *     comportamiento realista de conductores.
+     * </p>
+     * @param usuario Usuario que solicita el viaje
+     * @param rnd Generador aleatorio para simulacion de rechazo (null = sin rechazo)
+     * @return El vehiculo que acepto el viaje, o null si ninguno acepto
+     */
+    public Vehiculo solicitarViaje(Usuario usuario, Random rnd) {
         ColaPrioridadMonticulo colaDespacho = new ColaPrioridadMonticulo(vehiculos.tamanio());
 
-        // Poner todos los vehiculos disponibles en la cola de despacho
         for (int i = 0; i < vehiculos.tamanio(); i++) {
             Vehiculo v = (Vehiculo) vehiculos.devolver(i);
             if (v.isDisponible()) {
@@ -115,17 +163,17 @@ public class SistemaViajes {
             }
         }
 
-        // Procesar la cola secuencialmente
         while (!colaDespacho.estaVacia()) {
             int idxVehiculo = colaDespacho.extraerMin();
             Vehiculo candidato = (Vehiculo) vehiculos.devolver(idxVehiculo);
 
             if (candidato.isDisponible()) {
-                // El vehiculo acepta el viaje
+                if (rnd != null && rnd.nextDouble() < PROBABILIDAD_RECHAZO) {
+                    continue;
+                }
                 aceptarViaje(candidato, usuario);
                 return candidato;
             }
-            // Si ya no esta disponible (ej. otro viaje lo tomo), sigue con el siguiente
         }
 
         return null;
@@ -148,6 +196,142 @@ public class SistemaViajes {
             eta += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
         }
         return eta;
+    }
+
+    /**
+     * Calcula la tarifa de un viaje basada en el tiempo estimado.
+     * <p>
+     *     Convierte el ETA en segundos a distancia (km) usando la velocidad
+     *     promedio y la multiplica por la tarifa por kilometro.
+     * </p>
+     * @param etaSegundos Tiempo estimado de viaje en segundos
+     * @return Tarifa calculada en unidades monetarias
+     */
+    public double calcularTarifa(double etaSegundos) {
+        if (etaSegundos >= INFINITO) return 0;
+        double distanciaKm = etaSegundos * VELOCIDAD_PROMEDIO_M_S / 1000.0;
+        return distanciaKm * TARIFA_POR_KM;
+    }
+
+    /**
+     * Elimina un usuario del sistema (ej. cuando es recogido por un vehiculo).
+     * @param u Usuario a eliminar
+     */
+    public void removerUsuario(Usuario u) {
+        int idx = usuarios.buscar(u);
+        if (idx != -1) {
+            usuarios.eliminar(idx);
+        }
+    }
+
+    /**
+     * Ejecuta la recogida de un pasajero cuando el vehiculo llega a su ubicacion.
+     * <p>
+     *     Remueve al usuario del mapa, cambia el estado del vehiculo a EN_VIAJE,
+     *     selecciona un destino aleatorio en el grafo, calcula la ruta correspondiente
+     *     y registra el vehiculo en la cola de ocupados con su ETA como prioridad.
+     * </p>
+     * @param vehiculo Vehiculo que realizo la recogida
+     */
+    public void realizarPickup(Vehiculo vehiculo) {
+        Usuario usuario = vehiculo.getPasajeroAbordo();
+        if (usuario != null) {
+            removerUsuario(usuario);
+        }
+
+        vehiculo.setEstado(EstadoVehiculo.EN_VIAJE);
+
+        Random rnd = new Random();
+        int destino;
+        do {
+            destino = rnd.nextInt(grafo.getOrden());
+        } while (destino == vehiculo.getNodoActual());
+
+        int[] ruta = ruteador.calcularRuta(vehiculo.getNodoActual(), destino);
+        vehiculo.setRutaActiva(ruta);
+
+        if (ruta.length > 0) {
+            double eta = 0;
+            for (int i = 0; i < ruta.length - 1; i++) {
+                eta += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
+            }
+            int idx = buscarIndiceVehiculo(vehiculo);
+            if (idx != -1) {
+                colaOcupados.insertar(idx, eta);
+            }
+        }
+    }
+
+    /**
+     * Finaliza el viaje de un vehiculo cuando llega a su destino.
+     * <p>
+     *     Vuelve el estado del vehiculo a DISPONIBLE, limpia el pasajero
+     *     a bordo y la ruta activa, y lo remueve de la cola de ocupados.
+     * </p>
+     * @param vehiculo Vehiculo que completo el viaje
+     */
+    public void completarTransito(Vehiculo vehiculo) {
+        vehiculo.setEstado(EstadoVehiculo.DISPONIBLE);
+        vehiculo.setPasajeroAbordo(null);
+        vehiculo.setRutaActiva(new int[0]);
+
+        reconstruirColaOcupados();
+    }
+
+    /**
+     * Reconstruye la cola de ocupados desde cero.
+     * <p>
+     *     Se invoca tras finalizar un viaje para mantener la cola sincronizada
+     *     con los vehiculos actualmente en estado EN_VIAJE.
+     * </p>
+     */
+    private void reconstruirColaOcupados() {
+        colaOcupados.limpiar();
+        for (int i = 0; i < vehiculos.tamanio(); i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
+            if (v.getEstado() == EstadoVehiculo.EN_VIAJE) {
+                double eta = 0;
+                int[] ruta = v.getRutaActiva();
+                for (int j = 0; j < ruta.length - 1; j++) {
+                    eta += grafo.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
+                }
+                colaOcupados.insertar(i, eta);
+            }
+        }
+    }
+
+    /**
+     * Busca el indice de un vehiculo en la lista de vehiculos por referencia.
+     * @param v Vehiculo a buscar
+     * @return Indice en la lista, o -1 si no se encuentra
+     */
+    private int buscarIndiceVehiculo(Vehiculo v) {
+        for (int i = 0; i < vehiculos.tamanio(); i++) {
+            if (vehiculos.devolver(i) == v) return i;
+        }
+        return -1;
+    }
+
+    /**
+     * Encuentra un destino aleatorio adyacente al nodo dado.
+     * <p>
+     *     Busca aleatoriamente un nodo que tenga una conexion valida
+     *     (costo finito) desde el nodo de origen.
+     * </p>
+     * @param nodoActual Nodo de origen
+     * @return Indice del destino aleatorio, o -1 si no se encontro ninguna conexion
+     */
+    public int encontrarDestinoAleatorio(int nodoActual) {
+        Random rnd = new Random();
+        int intentos = 0;
+        while (intentos < 100) {
+            int destino = rnd.nextInt(grafo.getOrden());
+            if (destino != nodoActual && grafo.getMatrizCosto().devolver(nodoActual, destino) < Double.POSITIVE_INFINITY) {
+                return destino;
+            }
+            intentos++;
+        }
+        return -1;
     }
 
     /**

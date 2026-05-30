@@ -16,6 +16,8 @@ import java.util.Objects;
 public class Vehiculo {
     private final String patente;
     private int nodoActual;
+    private int nodoAnterior;
+    private double progreso;
     private EstadoVehiculo estado;
     private Usuario pasajeroAbordo;
     private int[] rutaActiva;
@@ -29,6 +31,8 @@ public class Vehiculo {
     public Vehiculo(String patente, int nodoInicial) {
         this.patente = patente;
         this.nodoActual = nodoInicial;
+        this.nodoAnterior = nodoInicial;
+        this.progreso = 1.0;
         this.estado = EstadoVehiculo.DISPONIBLE;
         this.pasajeroAbordo = null;
         this.rutaActiva = new int[0];
@@ -52,11 +56,43 @@ public class Vehiculo {
     }
 
     /**
-     * Establece la posicion actual del vehiculo.
+     * Establece la posicion actual del vehiculo (setter simple).
      * @param nodoActual Nuevo nodo
      */
     public void setNodoActual(int nodoActual) {
         this.nodoActual = nodoActual;
+    }
+
+    /**
+     * Devuelve el nodo anterior del segmento de interpolacion actual.
+     * @return Nodo de inicio del segmento
+     */
+    public int getNodoAnterior() {
+        return nodoAnterior;
+    }
+
+    /**
+     * Establece el nodo anterior para la interpolacion.
+     * @param nodoAnterior Nodo de inicio del segmento
+     */
+    public void setNodoAnterior(int nodoAnterior) {
+        this.nodoAnterior = nodoAnterior;
+    }
+
+    /**
+     * Devuelve el progreso de interpolacion en el segmento actual.
+     * @return Progreso entre 0.0 y 1.0
+     */
+    public double getProgreso() {
+        return progreso;
+    }
+
+    /**
+     * Establece el progreso de interpolacion.
+     * @param progreso Progreso entre 0.0 y 1.0
+     */
+    public void setProgreso(double progreso) {
+        this.progreso = progreso;
     }
 
     /**
@@ -100,12 +136,25 @@ public class Vehiculo {
     }
 
     /**
-     * Establece la ruta activa del vehiculo.
+     * Establece la ruta activa del vehiculo e inicializa el segmento de interpolacion.
+     * <p>
+     *     El primer segmento de interpolacion se define entre ruta[0] y ruta[1],
+     *     con progreso en 0. Si la ruta tiene menos de 2 nodos, ambos extremos
+     *     se fijan al unico nodo disponible.
+     * </p>
      * @param rutaActiva Arreglo de indices de nodos
      */
     public void setRutaActiva(int[] rutaActiva) {
         this.rutaActiva = rutaActiva;
         this.indiceRuta = 0;
+        this.progreso = 0.0;
+        if (rutaActiva.length >= 2) {
+            this.nodoAnterior = rutaActiva[0];
+            this.nodoActual = rutaActiva[1];
+        } else if (rutaActiva.length == 1) {
+            this.nodoAnterior = rutaActiva[0];
+            this.nodoActual = rutaActiva[0];
+        }
     }
 
     /**

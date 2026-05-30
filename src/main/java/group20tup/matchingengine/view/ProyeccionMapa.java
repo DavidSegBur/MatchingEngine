@@ -13,7 +13,7 @@ import group20tup.matchingengine.model.recursos.MetadataNodo;
  *     es de tipo equirrectangular simple, adecuada para areas geograficas
  *     reducidas como la ciudad de Salta.
  * </p>
- * @author arc
+ * @author Ivan
  * @version 1.0
  */
 public class ProyeccionMapa {

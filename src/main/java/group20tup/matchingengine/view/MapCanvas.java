@@ -9,6 +9,8 @@ import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 
 /**
  * Renderizador del mapa vial sobre un Canvas de JavaFX.
@@ -279,6 +281,15 @@ public class MapCanvas {
             gc.setLineWidth(1.5);
             gc.strokeOval(p[0] - VEHICULO_RADIO, p[1] - VEHICULO_RADIO,
                     VEHICULO_RADIO * 2, VEHICULO_RADIO * 2);
+
+            gc.setFont(Font.font("monospace", 10));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.setStroke(Color.rgb(30, 30, 30));
+            gc.setLineWidth(1.5);
+            gc.strokeText(v.getPatente(), p[0], p[1] - VEHICULO_RADIO - 3);
+            gc.setFill(Color.WHITE);
+            gc.fillText(v.getPatente(), p[0], p[1] - VEHICULO_RADIO - 3);
+            gc.setTextAlign(TextAlignment.LEFT);
         }
     }
 

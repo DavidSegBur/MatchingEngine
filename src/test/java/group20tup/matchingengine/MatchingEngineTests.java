@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Random;
+
 public class MatchingEngineTests {
 
     private static GrafoMapa mapaSalta;
@@ -369,5 +371,110 @@ public class MatchingEngineTests {
     void testSistemaViajesETAMismoNodo() {
         double eta = sistema.calcularETA(0, 0);
         assertEquals(0.0, eta, 1e-12, "ETA mismo origen y destino debe ser 0");
+    }
+
+    @Test
+    @DisplayName("Ciclo completo: DISPONIBLE -> APROXIMANDO -> EN_VIAJE -> DISPONIBLE")
+    void testCicloViajeCompleto() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("V001", 0));
+        Usuario u = new Usuario(1, 47);
+        s.agregarUsuario(u);
+
+        Vehiculo v = s.solicitarViaje(u);
+        assertNotNull(v);
+        assertEquals(EstadoVehiculo.APROXIMANDO, v.getEstado());
+        assertEquals(u, v.getPasajeroAbordo());
+        assertTrue(v.getRutaActiva().length >= 2);
+
+        assertTrue(s.realizarPickup(v));
+        assertEquals(EstadoVehiculo.EN_VIAJE, v.getEstado());
+        assertFalse(s.getColaOcupados().estaVacia());
+
+        s.completarTransito(v);
+        assertTrue(v.isDisponible());
+        assertNull(v.getPasajeroAbordo());
+    }
+
+    @Test
+    @DisplayName("Pickup remueve al usuario del sistema de viajes")
+    void testPickupRemueveUsuario() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("V002", 0));
+        Usuario u = new Usuario(2, 47);
+        s.agregarUsuario(u);
+
+        Vehiculo v = s.solicitarViaje(u);
+        assertNotNull(v);
+        assertEquals(1, s.totalUsuarios());
+
+        s.realizarPickup(v);
+        assertEquals(0, s.totalUsuarios(), "Usuario debe ser removido del sistema");
+    }
+
+    @Test
+    @DisplayName("Cola de ocupados se vacia al completar el transito")
+    void testCompletarTransitoReconstruyeCola() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("V003", 0));
+        s.registrarVehiculo(new Vehiculo("V004", 100));
+        Usuario u = new Usuario(3, 47);
+        s.agregarUsuario(u);
+
+        Vehiculo v = s.solicitarViaje(u);
+        assertNotNull(v);
+        s.realizarPickup(v);
+
+        assertEquals(1, s.getColaOcupados().tamanio());
+
+        s.completarTransito(v);
+        assertTrue(s.getColaOcupados().estaVacia(), "Cola de ocupados debe quedar vacia");
+    }
+
+    @Test
+    @DisplayName("Solo vehiculos DISPONIBLE son considerados en el dispatch")
+    void testDispatchExcluyeOcupados() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+
+        Vehiculo v1 = new Vehiculo("OCUP", 0);
+        v1.setEstado(EstadoVehiculo.EN_VIAJE);
+        s.registrarVehiculo(v1);
+
+        Usuario u = new Usuario(4, 47);
+        s.agregarUsuario(u);
+
+        assertNull(s.solicitarViaje(u), "Sin disponibles debe retornar null");
+
+        s.registrarVehiculo(new Vehiculo("DISP", 100));
+        Vehiculo elegido = s.solicitarViaje(u);
+        assertNotNull(elegido, "Con un disponible debe aceptar");
+        assertEquals("DISP", elegido.getPatente());
+    }
+
+    @Test
+    @DisplayName("calcularTarifa produce valores correctos")
+    void testCalculoTarifa() {
+        assertEquals(12.50, sistema.calcularTarifa(3600.0), 0.001,
+                "3600s a 25 km/h = 25 km * $0.50 = $12.50");
+        assertEquals(0.0, sistema.calcularTarifa(Double.POSITIVE_INFINITY),
+                "ETA infinito debe dar tarifa 0");
+        assertEquals(0.0, sistema.calcularTarifa(0.0),
+                "ETA 0 debe dar tarifa 0");
+    }
+
+    @Test
+    @DisplayName("Dispatch con rechazo simulado usando Random con seed fija")
+    void testRechazoConRandomSeed() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("V010", 0));
+        s.registrarVehiculo(new Vehiculo("V011", 100));
+        s.registrarVehiculo(new Vehiculo("V012", 200));
+        Usuario u = new Usuario(5, 47);
+        s.agregarUsuario(u);
+
+        Random rnd = new Random(42);
+        Vehiculo v = s.solicitarViaje(u, rnd);
+        assertNotNull(v, "Con 3 disponibles al menos uno debe aceptar");
+        assertEquals(EstadoVehiculo.APROXIMANDO, v.getEstado());
     }
 }

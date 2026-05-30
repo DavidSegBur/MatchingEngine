@@ -4,6 +4,7 @@ import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
+import group20tup.matchingengine.model.utilidades.CalculadorRutas;
 import group20tup.matchingengine.view.MapCanvas;
 import javafx.animation.AnimationTimer;
 import java.util.Random;
@@ -32,6 +33,7 @@ public class GestorSimulacion {
     private final SistemaViajes sistema;
     private final MapCanvas renderizador;
     private final GrafoMapa grafo;
+    private final CalculadorRutas ruteador;
     private final Random rnd;
     private final AnimationTimer timer;
     private long ultimoTick;
@@ -44,10 +46,11 @@ public class GestorSimulacion {
      * @param renderizador Renderizador del mapa para actualizar la vista
      * @param grafo Grafo vial de la ciudad para consultas de conectividad
      */
-    public GestorSimulacion(SistemaViajes sistema, MapCanvas renderizador, GrafoMapa grafo) {
+    public GestorSimulacion(SistemaViajes sistema, MapCanvas renderizador, GrafoMapa grafo, CalculadorRutas ruteador) {
         this.sistema = sistema;
         this.renderizador = renderizador;
         this.grafo = grafo;
+        this.ruteador = ruteador;
         this.rnd = new Random();
         this.ultimoTick = 0;
         this.contadorUsuarios = 0;
@@ -117,9 +120,12 @@ public class GestorSimulacion {
             int[] ruta = v.getRutaActiva();
 
             if (v.isDisponible() && (ruta.length == 0 || estaEnDestino(v))) {
-                int destino = sistema.encontrarDestinoAleatorio(v.getNodoActual());
-                if (destino != -1) {
-                    v.setRutaActiva(new int[]{v.getNodoActual(), destino});
+                int destino = rnd.nextInt(grafo.getOrden());
+                if (destino != v.getNodoActual()) {
+                    int[] nuevaRuta = ruteador.calcularRuta(v.getNodoActual(), destino);
+                    if (nuevaRuta.length >= 2) {
+                        v.setRutaActiva(nuevaRuta);
+                    }
                 }
             }
 
@@ -197,7 +203,7 @@ public class GestorSimulacion {
         while (sistema.totalUsuarios() < USUARIOS_OBJETIVO) {
             crearUsuario();
         }
-        while (sistema.totalVehiculos() < VEHICULOS_MIN) {
+        while (sistema.totalVehiculos() < VEHICULOS_MIN && sistema.totalVehiculos() < VEHICULOS_MAX) {
             crearVehiculo();
         }
     }

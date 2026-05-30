@@ -11,10 +11,13 @@ import group20tup.matchingengine.model.utilidades.sistema.SistemaViajes;
 import group20tup.matchingengine.view.MapCanvas;
 import group20tup.matchingengine.view.ProyeccionMapa;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
@@ -192,48 +195,76 @@ public class DashboardController {
      */
     @FXML
     public void initialize() {
-        grafoMapa = new GrafoMapa();
-        grafoMapa.cargarGrafo();
+        ProgressIndicator loader = new ProgressIndicator();
+        loader.setMaxSize(50, 50);
+        mapContainer.getChildren().add(loader);
+        StackPane.setAlignment(loader, Pos.CENTER);
 
-        proyeccion = new ProyeccionMapa(grafoMapa.getListaEsquinas());
-        renderizadorMapa = new MapCanvas(mapaCanvas, grafoMapa, proyeccion);
-        renderizadorMapa.inicializar();
+        Task<GrafoMapa> loadTask = new Task<>() {
+            @Override
+            protected GrafoMapa call() {
+                GrafoMapa g = new GrafoMapa();
+                g.cargarGrafo();
+                return g;
+            }
+        };
 
-        DijkstraRutas ruteador = new DijkstraRutas(grafoMapa);
-        sistema = new SistemaViajes(grafoMapa, ruteador);
-        gestor = new GestorSimulacion(sistema, renderizadorMapa, grafoMapa);
+        loadTask.setOnSucceeded(e -> {
+            mapContainer.getChildren().remove(loader);
+            grafoMapa = loadTask.getValue();
 
-        mapaCanvas.widthProperty().bind(mapContainer.widthProperty());
-        mapaCanvas.heightProperty().bind(mapContainer.heightProperty());
-        mapaCanvas.widthProperty().addListener((obs, old, n) -> {
-            if (gestor != null) gestor.renderizarFrame();
-        });
-        mapaCanvas.heightProperty().addListener((obs, old, n) -> {
-            if (gestor != null) gestor.renderizarFrame();
-        });
+            proyeccion = new ProyeccionMapa(grafoMapa.getListaEsquinas());
+            renderizadorMapa = new MapCanvas(mapaCanvas, grafoMapa, proyeccion);
+            renderizadorMapa.inicializar();
 
-        mapaCanvas.setOnMousePressed(this::onMousePressed);
-        mapaCanvas.setOnMouseDragged(this::onMouseDragged);
-        mapaCanvas.setOnMouseClicked(this::onCanvasClick);
-        mapaCanvas.setOnScroll(this::onScroll);
+            DijkstraRutas ruteador = new DijkstraRutas(grafoMapa);
+            sistema = new SistemaViajes(grafoMapa, ruteador);
+            gestor = new GestorSimulacion(sistema, renderizadorMapa, grafoMapa, ruteador);
 
-        lblInfo = new Label("Haga clic en un usuario\npara solicitar un viaje,\no en un vehiculo para\nver su informacion.");
-        lblInfo.setWrapText(true);
-        lblInfo.setStyle("-fx-font-size: 12;");
+            mapaCanvas.widthProperty().bind(mapContainer.widthProperty());
+            mapaCanvas.heightProperty().bind(mapContainer.heightProperty());
+            mapaCanvas.widthProperty().addListener((obs, old, n) -> {
+                if (gestor != null) gestor.renderizarFrame();
+            });
+            mapaCanvas.heightProperty().addListener((obs, old, n) -> {
+                if (gestor != null) gestor.renderizarFrame();
+            });
 
-        lblBusyQueue = new Label("");
-        lblBusyQueue.setWrapText(true);
-        lblBusyQueue.setStyle("-fx-font-size: 11; -fx-font-family: monospace;");
+            mapaCanvas.setOnMousePressed(DashboardController.this::onMousePressed);
+            mapaCanvas.setOnMouseDragged(DashboardController.this::onMouseDragged);
+            mapaCanvas.setOnMouseClicked(DashboardController.this::onCanvasClick);
+            mapaCanvas.setOnScroll(DashboardController.this::onScroll);
 
-        sidePanel.getChildren().addAll(lblInfo, lblBusyQueue);
+            lblInfo = new Label("Haga clic en un usuario\npara solicitar un viaje,\no en un vehiculo para\nver su informacion.");
+            lblInfo.setWrapText(true);
+            lblInfo.setStyle("-fx-font-size: 12;");
 
-        mapaCanvas.sceneProperty().addListener((obs, old, scene) -> {
-            if (scene != null) {
-                Platform.runLater(() -> {
-                    renderizadorMapa.redibujar();
-                    gestor.iniciar();
+            lblBusyQueue = new Label("");
+            lblBusyQueue.setWrapText(true);
+            lblBusyQueue.setStyle("-fx-font-size: 11; -fx-font-family: monospace;");
+
+            sidePanel.getChildren().addAll(lblInfo, lblBusyQueue);
+
+            if (mapaCanvas.getScene() != null) {
+                renderizadorMapa.redibujar();
+                gestor.iniciar();
+            } else {
+                mapaCanvas.sceneProperty().addListener((obs, old, scene) -> {
+                    if (scene != null) {
+                        Platform.runLater(() -> {
+                            renderizadorMapa.redibujar();
+                            gestor.iniciar();
+                        });
+                    }
                 });
             }
         });
+
+        loadTask.setOnFailed(e -> {
+            mapContainer.getChildren().remove(loader);
+            System.err.println("Error al cargar el grafo: " + loadTask.getException().getMessage());
+        });
+
+        new Thread(loadTask).start();
     }
 }

@@ -19,6 +19,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
@@ -58,6 +59,8 @@ public class DashboardController {
     private ProgressIndicator floydProgress;
     @FXML
     private Label lblFloydStatus;
+    @FXML
+    private Button btnResetView;
 
     private GrafoMapa grafoMapa;
     private ProyeccionMapa proyeccion;
@@ -355,6 +358,11 @@ public class DashboardController {
             proyeccion = new ProyeccionMapa(grafoMapa.getListaEsquinas());
             renderizadorMapa = new MapCanvas(mapaCanvas, grafoMapa, proyeccion);
             renderizadorMapa.inicializar();
+
+            btnResetView.setOnAction(evt -> {
+                proyeccion.resetView();
+                renderizadorMapa.redibujar();
+            });
 
             dijkstraRuteador = new DijkstraRutas(grafoMapa);
             sistema = new SistemaViajes(grafoMapa, dijkstraRuteador);

@@ -386,28 +386,6 @@ public class SistemaViajes {
     }
 
     /**
-     * Encuentra un destino aleatorio adyacente al nodo dado.
-     * <p>
-     *     Busca aleatoriamente un nodo que tenga una conexion valida
-     *     (costo finito) desde el nodo de origen.
-     * </p>
-     * @param nodoActual Nodo de origen
-     * @return Indice del destino aleatorio, o -1 si no se encontro ninguna conexion
-     */
-    public int encontrarDestinoAleatorio(int nodoActual) {
-        Random rnd = new Random();
-        int intentos = 0;
-        while (intentos < 100) {
-            int destino = rnd.nextInt(grafo.getOrden());
-            if (destino != nodoActual && grafo.getMatrizCosto().devolver(nodoActual, destino) < Double.POSITIVE_INFINITY) {
-                return destino;
-            }
-            intentos++;
-        }
-        return -1;
-    }
-
-    /**
      * Acepta un viaje: asigna el pasajero, calcula la ruta y cambia el estado del vehiculo.
      * @param vehiculo Vehiculo que acepta el viaje
      * @param usuario Usuario a recoger

@@ -18,6 +18,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
@@ -263,7 +264,13 @@ public class DashboardController {
             lblBusyQueue.setWrapText(true);
             lblBusyQueue.setStyle("-fx-font-size: 11; -fx-font-family: monospace;");
 
-            sidePanel.getChildren().addAll(lblInfo, lblBusyQueue);
+            ScrollPane busyScroll = new ScrollPane(lblBusyQueue);
+            busyScroll.setFitToWidth(true);
+            busyScroll.setPrefHeight(200);
+            busyScroll.setMaxHeight(250);
+            busyScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            busyScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            sidePanel.getChildren().addAll(lblInfo, busyScroll);
 
             if (mapaCanvas.getScene() != null) {
                 renderizadorMapa.redibujar();

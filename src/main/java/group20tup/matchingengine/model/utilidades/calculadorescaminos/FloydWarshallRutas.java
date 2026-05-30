@@ -31,7 +31,7 @@ public class FloydWarshallRutas implements CalculadorRutas {
         this.costos = new double[n][n];
         this.siguiente = new int[n][n];
         
-        // Incializa las matrices de costo y siguiente
+        // Inicializa las matrices de costo y siguiente
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 costos[i][j] = grafo.getMatrizCosto().devolver(i, j);
@@ -60,7 +60,7 @@ public class FloydWarshallRutas implements CalculadorRutas {
 
     /**
      * Calcula el camino mas corto desde el origen al destino.
-     * La reconsruccion del camino es O(L) donde L es el tamaño del camino
+     * La reconstruccion del camino es O(L) donde L es el tamaño del camino
      * 
      * @param origen  Indice del nodo de Origen
      * @param destino Indice del nodo de destino

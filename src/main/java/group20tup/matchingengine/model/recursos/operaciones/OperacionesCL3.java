@@ -11,19 +11,19 @@ package group20tup.matchingengine.model.recursos.operaciones;
  * @version 1.0
  */
 public interface OperacionesCL3 {
-	/**
-	 * Inserta un elemento en la posicion indicada.
-	 * @param elemento Elemento a insertar
-	 * @param posicion Indice donde insertar (0 <= posicion <= tamanio())
-	 * @throws IndexOutOfBoundsException si la posicion es invalida
-	 */
-	void insertar(Object elemento, int posicion);
+    /**
+     * Inserta un elemento en la posicion indicada.
+     * @param elemento Elemento a insertar
+     * @param posicion Indice donde insertar (0 <= posicion <= tamanio())
+     * @throws IndexOutOfBoundsException si la posicion es invalida
+     */
+    void insertar(Object elemento, int posicion);
 
-	/**
-	 * Reemplaza el elemento en la posicion indicada por uno nuevo.
-	 * @param elemento Nuevo valor
-	 * @param posicion Indice del elemento a reemplazar (de 0 a tamaño - 1)
-	 * @throws IndexOutOfBoundsException si la posicion es invalida o la lista esta vacia
-	 */
-	void reemplazar(Object elemento, int posicion);
+    /**
+     * Reemplaza el elemento en la posicion indicada por uno nuevo.
+     * @param elemento Nuevo valor
+     * @param posicion Indice del elemento a reemplazar (de 0 a tamaño - 1)
+     * @throws IndexOutOfBoundsException si la posicion es invalida o la lista esta vacia
+     */
+    void reemplazar(Object elemento, int posicion);
 }

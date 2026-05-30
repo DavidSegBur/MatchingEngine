@@ -18,7 +18,7 @@ public class Nodo {
      * Construye un nodo con el elemento dado y sin siguiente nodo.
      * @param nodoInfo Elemento a almacenar en el nodo
      */
-    public Nodo(Object nodoInfo){
+    public Nodo(Object nodoInfo) {
         this(nodoInfo,null);
     }
 
@@ -27,7 +27,7 @@ public class Nodo {
      * @param nodoInfo Elemento a almacenar en el nodo
      * @param nextNodo Siguiente nodo en la secuencia
      */
-    public Nodo(Object nodoInfo,Nodo nextNodo){
+    public Nodo(Object nodoInfo,Nodo nextNodo) {
         this.nodoInfo = nodoInfo;
         this.nextNodo = nextNodo;
     }
@@ -36,7 +36,7 @@ public class Nodo {
      * Establece el elemento almacenado en el nodo.
      * @param nodoInfo Nuevo elemento
      */
-    public void setNodoInfo(Object nodoInfo){
+    public void setNodoInfo(Object nodoInfo) {
         this.nodoInfo = nodoInfo;
     }
 
@@ -44,7 +44,7 @@ public class Nodo {
      * Establece la referencia al siguiente nodo.
      * @param nextNodo Siguiente nodo en la secuencia
      */
-    public void setNextNodo(Nodo nextNodo){
+    public void setNextNodo(Nodo nextNodo) {
         this.nextNodo = nextNodo;
     }
 
@@ -52,7 +52,7 @@ public class Nodo {
      * Devuelve el elemento almacenado en el nodo.
      * @return Elemento del nodo
      */
-    public Object getNodoInfo(){
+    public Object getNodoInfo() {
         return this.nodoInfo;
     }
 
@@ -60,7 +60,7 @@ public class Nodo {
      * Devuelve la referencia al siguiente nodo.
      * @return Siguiente nodo, o null si es el ultimo
      */
-    public Nodo getNextNodo(){
+    public Nodo getNextNodo() {
         return this.nextNodo;
     }
 }

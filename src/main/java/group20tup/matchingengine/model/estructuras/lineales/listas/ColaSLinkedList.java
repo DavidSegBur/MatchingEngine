@@ -21,7 +21,7 @@ public class ColaSLinkedList implements OperacionesCL1 {
     /**
      * Construye una cola vacia.
      */
-    public ColaSLinkedList(){
+    public ColaSLinkedList() {
         limpiar();
     }
 
@@ -30,8 +30,8 @@ public class ColaSLinkedList implements OperacionesCL1 {
      * @param elemento Elemento a insertar
      */
     @Override
-    public void meter(Object elemento){
-        if(!estaVacia()){
+    public void meter(Object elemento) {
+        if(!estaVacia()) {
             this.finalC.setNextNodo(new Nodo(elemento));
             this.finalC = this.finalC.getNextNodo();
         }
@@ -47,7 +47,7 @@ public class ColaSLinkedList implements OperacionesCL1 {
     @Override
     public Object sacar() throws NoSuchElementException {
         Object elemento = null;
-        if(!estaVacia()){
+        if(!estaVacia()) {
             elemento = this.frenteC.getNodoInfo();
             this.frenteC = this.frenteC.getNextNodo();
             if(estaVacia())
@@ -63,7 +63,7 @@ public class ColaSLinkedList implements OperacionesCL1 {
      * @return true si la cola no contiene elementos, false en caso contrario
      */
     @Override
-    public boolean estaVacia(){
+    public boolean estaVacia() {
         return this.frenteC==null;
     }
 
@@ -71,7 +71,7 @@ public class ColaSLinkedList implements OperacionesCL1 {
      * Elimina todos los elementos de la cola, dejandola vacia.
      */
     @Override
-    public void limpiar(){
+    public void limpiar() {
         this.frenteC = this.finalC = null;
     }
 

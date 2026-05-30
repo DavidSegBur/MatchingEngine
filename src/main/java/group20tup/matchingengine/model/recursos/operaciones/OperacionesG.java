@@ -11,14 +11,14 @@ package group20tup.matchingengine.model.recursos.operaciones;
  */
 public interface OperacionesG {
 
-	/**
-	 * Muestra el recorrido del grafo en amplitud (BFS).
-	 */
-	void muestraBEA();
+    /**
+     * Muestra el recorrido del grafo en amplitud (BFS).
+     */
+    void muestraBEA();
 
-	/**
-	 * Muestra el recorrido del grafo en profundidad (DFS).
-	 */
-	void muestraBPF();
+    /**
+     * Muestra el recorrido del grafo en profundidad (DFS).
+     */
+    void muestraBPF();
 
 }

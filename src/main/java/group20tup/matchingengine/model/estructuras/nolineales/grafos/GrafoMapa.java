@@ -72,38 +72,38 @@ public class GrafoMapa extends GrafoDirigido {
             throw new IllegalArgumentException("No se encontro el archivo de metadatos en: " + RUTA_METADATOS);
         }
 
-		int lineCount = 0;
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-			br.readLine();
-			while (br.readLine() != null) {
-				lineCount++;
-			}
-		} catch (Exception ex) {
-			System.err.println("No se pudo encontrar el archivo para cargar los metadatos: " + ex.getMessage());
-		}
+        int lineCount = 0;
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            br.readLine();
+            while (br.readLine() != null) {
+                lineCount++;
+            }
+        } catch (Exception ex) {
+            System.err.println("No se pudo encontrar el archivo para cargar los metadatos: " + ex.getMessage());
+        }
 
-		String[] lineas = new String[lineCount];
-		is = getClass().getResourceAsStream(RUTA_METADATOS);
-		if (is == null) {
-			throw new IllegalArgumentException("No se encontro el archivo de metadatos en: " + RUTA_METADATOS);
-		}
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-			br.readLine();
-			int idx = 0;
-			String linea;
-			while ((linea = br.readLine()) != null) {
-				if (!linea.trim().isEmpty()) {
-					lineas[idx++] = linea;
-				}
-			}
-		} catch (Exception ex) {
-			System.err.println("No se pudo encontrar el archivo para cargar los metadatos: " + ex.getMessage());
-		}
+        String[] lineas = new String[lineCount];
+        is = getClass().getResourceAsStream(RUTA_METADATOS);
+        if (is == null) {
+            throw new IllegalArgumentException("No se encontro el archivo de metadatos en: " + RUTA_METADATOS);
+        }
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            br.readLine();
+            int idx = 0;
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                if (!linea.trim().isEmpty()) {
+                    lineas[idx++] = linea;
+                }
+            }
+        } catch (Exception ex) {
+            System.err.println("No se pudo encontrar el archivo para cargar los metadatos: " + ex.getMessage());
+        }
 
-		this.mapeoIndicesAIdOSM = new long[lineas.length];
+        this.mapeoIndicesAIdOSM = new long[lineas.length];
 
-		int contadorSecuencial = 0;
-		for (String linea : lineas) {
+        int contadorSecuencial = 0;
+        for (String linea : lineas) {
             String[] campos = linea.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
             if (campos.length >= 6) {
                 long idOSM = Long.parseLong(campos[0].trim());
@@ -156,23 +156,23 @@ public class GrafoMapa extends GrafoDirigido {
 
                     int valorCelda = Integer.parseInt(valores[columnaInterna + 1].trim());
 
-					if (filaInterna == columnaInterna) {
-						this.matrizCosto.actualizar(0.0, filaInterna, columnaInterna);
-					} else if (valorCelda == 1) {
-						MetadataNodo nodoOrigen = (MetadataNodo) this.listaEsquinas.devolver(filaInterna);
-						MetadataNodo nodoDestino = (MetadataNodo) this.listaEsquinas.devolver(columnaInterna);
+                    if (filaInterna == columnaInterna) {
+                        this.matrizCosto.actualizar(0.0, filaInterna, columnaInterna);
+                    } else if (valorCelda == 1) {
+                        MetadataNodo nodoOrigen = (MetadataNodo) this.listaEsquinas.devolver(filaInterna);
+                        MetadataNodo nodoDestino = (MetadataNodo) this.listaEsquinas.devolver(columnaInterna);
 
-						double distanciaMetros = calcularHaversine(
-								nodoOrigen.getLatitud(), nodoOrigen.getLongitud(),
-								nodoDestino.getLatitud(), nodoDestino.getLongitud()
-								);
+                        double distanciaMetros = calcularHaversine(
+                                nodoOrigen.getLatitud(), nodoOrigen.getLongitud(),
+                                nodoDestino.getLatitud(), nodoDestino.getLongitud()
+                                );
 
-						double etaSegundos = distanciaMetros / VELOCIDAD_METROS_POR_SEGUNDO;
+                        double etaSegundos = distanciaMetros / VELOCIDAD_METROS_POR_SEGUNDO;
 
-						this.matrizCosto.actualizar(etaSegundos, filaInterna, columnaInterna);
-					} else {
-						this.matrizCosto.actualizar(Double.POSITIVE_INFINITY, filaInterna, columnaInterna);
-					}
+                        this.matrizCosto.actualizar(etaSegundos, filaInterna, columnaInterna);
+                    } else {
+                        this.matrizCosto.actualizar(Double.POSITIVE_INFINITY, filaInterna, columnaInterna);
+                    }
                 }
                 ++filaInterna;
             }

@@ -6,6 +6,8 @@ import group20tup.matchingengine.model.recursos.MetadataNodo;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
+import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
+import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
@@ -32,6 +34,7 @@ public class MapCanvas {
     private int[][] aristas;
 
     private static final double NODO_RADIO = 2.5;
+    private static final double RUTA_NODO_RADIO = 4.0;
     private static final double VEHICULO_RADIO = 6.0;
     private static final double USUARIO_RADIO = 5.0;
     private static final double PADDING = 30.0;
@@ -179,12 +182,15 @@ public class MapCanvas {
      * <p>
      *     Recorre un arreglo de indices de nodos que forman una ruta y dibuja
      *     las conexiones entre ellos con un color y grosor destacados.
+     *     Tambien dibuja los nodos de la ruta con un color de resalte para
+     *     diferenciarlos de las intersecciones comunes de la red vial.
      *     Util para visualizar resultados de Dijkstra o Floyd-Warshall.
      * </p>
      * @param ruta Arreglo de indices de nodos que forman la ruta
-     * @param color Color con el cual dibujar la ruta resaltada
+     * @param colorAristas Color con el cual dibujar las aristas resaltadas
+     * @param colorNodos Color con el cual dibujar los nodos resaltados
      */
-    public void renderRuta(int[] ruta, Color color) {
+    public void renderRuta(int[] ruta, Color colorAristas, Color colorNodos) {
         if (ruta == null || ruta.length < 2) return;
 
         double w = canvas.getWidth();
@@ -195,13 +201,43 @@ public class MapCanvas {
         double tx = rect[0], ty = rect[1], tw = rect[2], th = rect[3];
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.setLineWidth(4.0);
-        gc.setStroke(color);
 
+        gc.setLineWidth(4.0);
+        gc.setStroke(colorAristas);
         for (int i = 0; i < ruta.length - 1; i++) {
             double[] p1 = proyectarNodo(ruta[i], tx, ty, tw, th);
             double[] p2 = proyectarNodo(ruta[i + 1], tx, ty, tw, th);
             gc.strokeLine(p1[0], p1[1], p2[0], p2[1]);
+        }
+
+        gc.setFill(colorNodos);
+        for (int i = 0; i < ruta.length; i++) {
+            double[] p = proyectarNodo(ruta[i], tx, ty, tw, th);
+            gc.fillOval(p[0] - RUTA_NODO_RADIO, p[1] - RUTA_NODO_RADIO,
+                    RUTA_NODO_RADIO * 2, RUTA_NODO_RADIO * 2);
+        }
+    }
+
+    /**
+     * Dibuja la ruta activa de un vehiculo con colores segun su estado.
+     * <p>
+     *     Para vehiculos APROXIMANDO usa naranja/coral, para EN_VIAJE usa
+     *     dorado/cian (tal como especifica la interfaz de usuario). No hace
+     *     nada si el vehiculo no tiene una ruta activa valida.
+     * </p>
+     * @param v Vehiculo cuya ruta activa se desea renderizar
+     */
+    public void renderRutaVehiculo(Vehiculo v) {
+        int[] ruta = v.getRutaActiva();
+        if (ruta == null || ruta.length < 2) return;
+        int inicio = Math.min(v.getIndiceRuta(), ruta.length - 1);
+        int restoLen = ruta.length - inicio;
+        int[] resto = new int[restoLen];
+        System.arraycopy(ruta, inicio, resto, 0, restoLen);
+        if (v.getEstado() == EstadoVehiculo.APROXIMANDO) {
+            renderRuta(resto, Color.ORANGE, Color.CORAL);
+        } else if (v.getEstado() == EstadoVehiculo.EN_VIAJE) {
+            renderRuta(resto, Color.GOLD, Color.CYAN);
         }
     }
 

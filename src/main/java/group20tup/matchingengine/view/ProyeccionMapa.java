@@ -21,6 +21,9 @@ public class ProyeccionMapa {
     private double maxLat;
     private double minLon;
     private double maxLon;
+    private double panX;
+    private double panY;
+    private double zoom;
 
     /**
      * Construye la proyeccion calculando los limites geograficos a partir
@@ -52,6 +55,9 @@ public class ProyeccionMapa {
         this.maxLat = maxLatTmp;
         this.minLon = minLonTmp;
         this.maxLon = maxLonTmp;
+        this.panX = 0.0;
+        this.panY = 0.0;
+        this.zoom = 1.0;
     }
 
     /**
@@ -60,7 +66,9 @@ public class ProyeccionMapa {
      * <p>
      *     Aplica interpolacion lineal para convertir las coordenadas geograficas
      *     en pixeles, mapeando el rango de latitudes al eje Y y el rango de
-     *     longitudes al eje X del rectangulo destino.
+     *     longitudes al eje X del rectangulo destino. Luego aplica la
+     *     transformacion de zoom y desplazamiento (pan) para la navegacion
+     *     interactiva del mapa.
      * </p>
      * @param lat Latitud del punto a proyectar en grados decimales
      * @param lon Longitud del punto a proyectar en grados decimales
@@ -78,6 +86,56 @@ public class ProyeccionMapa {
 
         double x = (lon - minLon) / rangoLon * targetW + targetX;
         double y = (maxLat - lat) / rangoLat * targetH + targetY;
+        x = x * zoom + panX;
+        y = y * zoom + panY;
         return new double[]{x, y};
+    }
+
+    /**
+     * Desplaza la vista del mapa en pixeles.
+     * @param dx Desplazamiento horizontal en pixeles
+     * @param dy Desplazamiento vertical en pixeles
+     */
+    public void pan(double dx, double dy) {
+        this.panX += dx;
+        this.panY += dy;
+    }
+
+    /**
+     * Aplica zoom sobre el mapa manteniendo un punto fijo en pantalla.
+     * <p>
+     *     El punto (pivotX, pivotY) permanece estacionario mientras el
+     *     resto del mapa se acerca o se aleja. Esto permite hacer zoom
+     *     centrado en la posicion del cursor.
+     * </p>
+     * @param factor Factor de zoom (&gt;1 acerca, &lt;1 aleja)
+     * @param pivotX Coordenada X del punto fijo en pixeles del canvas
+     * @param pivotY Coordenada Y del punto fijo en pixeles del canvas
+     */
+    public void zoom(double factor, double pivotX, double pivotY) {
+        double oldZoom = zoom;
+        double newZoom = oldZoom * factor;
+
+        // Clamp zoom to reasonable range to prevent extreme values
+        final double MIN_ZOOM = 0.1;
+        final double MAX_ZOOM = 10.0;
+        if (newZoom < MIN_ZOOM) newZoom = MIN_ZOOM;
+        if (newZoom > MAX_ZOOM) newZoom = MAX_ZOOM;
+
+        // Compute pan to keep the pivot point fixed at the new zoom level
+        zoom = newZoom;
+        double baseX = (pivotX - panX) / oldZoom;
+        double baseY = (pivotY - panY) / oldZoom;
+        panX = pivotX - baseX * newZoom;
+        panY = pivotY - baseY * newZoom;
+    }
+
+    /**
+     * Reinicia la transformacion de vista (zoom=1, pan=0).
+     */
+    public void resetView() {
+        this.panX = 0.0;
+        this.panY = 0.0;
+        this.zoom = 1.0;
     }
 }

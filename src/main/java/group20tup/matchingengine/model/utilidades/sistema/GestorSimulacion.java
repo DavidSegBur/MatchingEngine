@@ -77,10 +77,29 @@ public class GestorSimulacion {
         for (int i = 0; i < VEHICULOS_MIN; i++) {
             crearVehiculo();
         }
+        renderizarFrame();
+        timer.start();
+    }
+
+    /**
+     * Renderiza el frame completo del mapa incluyendo rutas activas, vehiculos y usuarios.
+     * <p>
+     *     Metodo publico utilizable desde el controlador para forzar un re-render
+     *     completo (por ejemplo al redimensionar la ventana).
+     * </p>
+     */
+    public void renderizarFrame() {
         renderizador.redibujar();
+
+        for (int i = 0; i < sistema.totalVehiculos(); i++) {
+            Vehiculo v = sistema.getVehiculo(i);
+            if (v.getRutaActiva().length >= 2) {
+                renderizador.renderRutaVehiculo(v);
+            }
+        }
+
         renderizador.renderVehiculos(sistema.getListaVehiculos());
         renderizador.renderUsuarios(sistema.getListaUsuarios());
-        timer.start();
     }
 
     /**
@@ -109,10 +128,7 @@ public class GestorSimulacion {
 
         procesarArribos();
         mantenerDensidad();
-
-        renderizador.redibujar();
-        renderizador.renderVehiculos(sistema.getListaVehiculos());
-        renderizador.renderUsuarios(sistema.getListaUsuarios());
+        renderizarFrame();
     }
 
     private boolean estaEnDestino(Vehiculo v) {

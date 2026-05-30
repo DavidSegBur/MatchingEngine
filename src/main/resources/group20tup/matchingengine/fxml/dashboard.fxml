@@ -16,10 +16,10 @@
     </center>
     <right>
         <VBox fx:id="sidePanel"
-              minWidth="200"
-              prefWidth="250"
-              spacing="10"
-              style="-fx-background-color: #f5f5f5; -fx-padding: 12;">
+              prefWidth="240"
+              maxWidth="350"
+              spacing="8"
+              style="-fx-background-color: #f5f5f5; -fx-padding: 8;">
             <Label text="Panel de Control"
                    style="-fx-font-weight: bold; -fx-font-size: 14;"/>
         </VBox>

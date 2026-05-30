@@ -16,6 +16,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import java.util.Random;
@@ -48,8 +49,37 @@ public class DashboardController {
     private SistemaViajes sistema;
     private Label lblInfo;
     private Label lblBusyQueue;
+    private double mouseX;
+    private double mouseY;
+    private boolean dragging;
+    private long ultimoRenderDrag;
+
+    private void onMousePressed(MouseEvent e) {
+        mouseX = e.getX();
+        mouseY = e.getY();
+        dragging = false;
+        ultimoRenderDrag = 0;
+    }
+
+    private void onMouseDragged(MouseEvent e) {
+        double dx = e.getX() - mouseX;
+        double dy = e.getY() - mouseY;
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+            dragging = true;
+        }
+        proyeccion.pan(dx, dy);
+        mouseX = e.getX();
+        mouseY = e.getY();
+        long now = System.nanoTime();
+        if (gestor != null && now - ultimoRenderDrag > 30_000_000) {
+            gestor.renderizarFrame();
+            ultimoRenderDrag = now;
+        }
+    }
 
     private void onCanvasClick(MouseEvent e) {
+        if (dragging) return;
+
         double x = e.getX(), y = e.getY();
 
         Usuario usuario = renderizadorMapa.hitTestUsuario(x, y, sistema.getListaUsuarios());
@@ -62,6 +92,15 @@ public class DashboardController {
         if (vehiculo != null) {
             mostrarInfoVehiculo(vehiculo);
         }
+    }
+
+    private void onScroll(ScrollEvent e) {
+        double dy = e.getDeltaY();
+        if (dy == 0) return;
+        double factor = dy > 0 ? 1.1 : 1.0 / 1.1;
+        proyeccion.zoom(factor, e.getX(), e.getY());
+        if (gestor != null) gestor.renderizarFrame();
+        e.consume();
     }
 
     private void solicitarViajeUI(Usuario usuario) {
@@ -166,10 +205,17 @@ public class DashboardController {
 
         mapaCanvas.widthProperty().bind(mapContainer.widthProperty());
         mapaCanvas.heightProperty().bind(mapContainer.heightProperty());
-        mapaCanvas.widthProperty().addListener((obs, old, n) -> renderizadorMapa.redibujar());
-        mapaCanvas.heightProperty().addListener((obs, old, n) -> renderizadorMapa.redibujar());
+        mapaCanvas.widthProperty().addListener((obs, old, n) -> {
+            if (gestor != null) gestor.renderizarFrame();
+        });
+        mapaCanvas.heightProperty().addListener((obs, old, n) -> {
+            if (gestor != null) gestor.renderizarFrame();
+        });
 
+        mapaCanvas.setOnMousePressed(this::onMousePressed);
+        mapaCanvas.setOnMouseDragged(this::onMouseDragged);
         mapaCanvas.setOnMouseClicked(this::onCanvasClick);
+        mapaCanvas.setOnScroll(this::onScroll);
 
         lblInfo = new Label("Haga clic en un usuario\npara solicitar un viaje,\no en un vehiculo para\nver su informacion.");
         lblInfo.setWrapText(true);

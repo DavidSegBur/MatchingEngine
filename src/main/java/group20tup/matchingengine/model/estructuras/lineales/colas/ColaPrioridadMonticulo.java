@@ -59,11 +59,9 @@ public class ColaPrioridadMonticulo {
     }
 
     /**
-     * Elimina todos los elementos de la cola.
+     * Elimina todos los elementos de la cola en O(1).
      */
     public void limpiar() {
-        while (!heap.estaVacia()) {
-            heap.extraerMin();
-        }
+        heap.reset();
     }
 }

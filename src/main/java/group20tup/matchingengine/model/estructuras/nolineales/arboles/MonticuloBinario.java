@@ -93,6 +93,14 @@ public class MonticuloBinario {
     }
 
     /**
+     * Reinicia el monticulo eliminando todos los elementos en O(1).
+     * Los arreglos subyacentes se reutilizan (se reescribiran al insertar).
+     */
+    public void reset() {
+        size = 0;
+    }
+
+    /**
      * Mueve el elemento en el indice i hacia arriba en el monticulo hasta que
      * la propiedad del monticulo es la correcta.
      * 

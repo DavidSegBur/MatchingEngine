@@ -29,7 +29,7 @@ public class MatrizGrafo extends MatrizArr{
 	public boolean areConnected(int i, int j){
 		boolean response=false;
 		if (i>=0 && i<getNroFilas() && j>=0 && j<getNroColumnas()){
-			if (this.matriz[i][j] != 0){
+			if (this.matriz[i][j] > 0.0 && this.matriz[i][j] < Double.POSITIVE_INFINITY){
 				response=true;
 			}
 		}				

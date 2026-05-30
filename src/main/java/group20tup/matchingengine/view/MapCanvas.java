@@ -6,8 +6,6 @@ import group20tup.matchingengine.model.recursos.MetadataNodo;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
-import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
-import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;

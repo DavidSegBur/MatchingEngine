@@ -8,6 +8,7 @@ import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
 import group20tup.matchingengine.model.utilidades.CalculadorRutas;
 import group20tup.matchingengine.model.utilidades.calculadorescaminos.DijkstraRutas;
 import group20tup.matchingengine.model.utilidades.calculadorescaminos.FloydWarshallRutas;
+import group20tup.matchingengine.model.utilidades.sistema.EstadisticasSimulacion;
 import group20tup.matchingengine.model.utilidades.sistema.GestorSimulacion;
 import group20tup.matchingengine.model.utilidades.sistema.SistemaViajes;
 import group20tup.matchingengine.view.MapCanvas;
@@ -26,6 +27,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import java.util.Random;
 
 /**
@@ -65,6 +69,7 @@ public class DashboardController {
     private volatile boolean floydListo = false;
     private Label lblInfo;
     private Label lblBusyQueue;
+    private Label lblStats;
     private double mouseX;
     private double mouseY;
     private boolean dragging;
@@ -393,6 +398,24 @@ public class DashboardController {
             busyScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
             sidePanel.getChildren().addAll(lblInfo, busyScroll);
 
+            Label sep = new Label("─────────────────");
+            sep.setStyle("-fx-font-size: 10; -fx-text-fill: #ccc; -fx-padding: 4 0 0 0;");
+
+            Label lblStatsHeader = new Label("Estadisticas");
+            lblStatsHeader.setStyle("-fx-font-weight: bold; -fx-font-size: 12;");
+
+            lblStats = new Label("(aun sin datos)");
+            lblStats.setWrapText(true);
+            lblStats.setStyle("-fx-font-size: 11; -fx-font-family: monospace;");
+
+            sidePanel.getChildren().addAll(sep, lblStatsHeader, lblStats);
+
+            Timeline statsTimer = new Timeline(
+                new KeyFrame(Duration.millis(500), evt -> actualizarEstadisticas())
+            );
+            statsTimer.setCycleCount(Timeline.INDEFINITE);
+            statsTimer.play();
+
             if (mapaCanvas.getScene() != null) {
                 renderizadorMapa.redibujar();
                 gestor.iniciar();
@@ -428,5 +451,44 @@ public class DashboardController {
         });
 
         new Thread(loadTask).start();
+    }
+
+    /**
+     * Actualiza los labels de estadisticas en el panel lateral.
+     * Se ejecuta cada 500ms via Timeline. Lee los contadores del
+     * sistema de viajes y calcula la tasa de uso actual de la flota.
+     */
+    private void actualizarEstadisticas() {
+        if (sistema == null) return;
+        EstadisticasSimulacion e = sistema.getEstadisticas();
+
+        int ocupados = 0;
+        int total = sistema.totalVehiculos();
+        for (int i = 0; i < total; i++) {
+            if (sistema.getVehiculo(i).getEstado() != EstadoVehiculo.DISPONIBLE) {
+                ocupados++;
+            }
+        }
+
+        String texto = String.format(
+            "Solicitados: %d\n" +
+            "Completados: %d\n" +
+            "Rechazados: %d\n" +
+            "ETA prom: %.0fs\n" +
+            "Dist total: %.1f km\n" +
+            "Tarifa prom: $%.2f\n" +
+            "Uso: %d/%d (%.0f%%)\n" +
+            "Viajes/h: %.1f",
+            e.getViajesSolicitados(),
+            e.getViajesCompletados(),
+            e.getViajesRechazados(),
+            e.getETAPromedio(),
+            e.getSumaDistanciasKm(),
+            e.getTarifaPromedio(),
+            ocupados, total,
+            total > 0 ? ocupados * 100.0 / total : 0,
+            e.getViajesPorHora()
+        );
+        lblStats.setText(texto);
     }
 }

@@ -35,6 +35,7 @@ public class SistemaViajes {
     private final ListaDoubleLinkedL vehiculos;
     private final ListaDoubleLinkedL usuarios;
     private final ColaPrioridadMonticulo colaOcupados;
+    private final EstadisticasSimulacion estadisticas;
 
     /**
      * Construye el sistema de viajes con el grafo y el ruteador dados.
@@ -47,6 +48,7 @@ public class SistemaViajes {
         this.vehiculos = new ListaDoubleLinkedL();
         this.usuarios = new ListaDoubleLinkedL();
         this.colaOcupados = new ColaPrioridadMonticulo(20);
+        this.estadisticas = new EstadisticasSimulacion();
     }
 
     /**
@@ -140,6 +142,14 @@ public class SistemaViajes {
     }
 
     /**
+     * Devuelve el registro de estadisticas de la simulacion.
+     * @return Instancia de EstadisticasSimulacion con los contadores acumulados
+     */
+    public EstadisticasSimulacion getEstadisticas() {
+        return estadisticas;
+    }
+
+    /**
      * Procesa una solicitud de viaje sin simulacion de rechazo.
      * <p>
      *     Coloca todos los vehiculos disponibles en la cola de despacho
@@ -169,6 +179,7 @@ public class SistemaViajes {
      * @return El vehiculo que acepto el viaje, o null si ninguno acepto
      */
     public Vehiculo solicitarViaje(Usuario usuario, Random rnd) {
+        estadisticas.registrarSolicitud();
         ColaPrioridadMonticulo colaDespacho = new ColaPrioridadMonticulo(vehiculos.tamanio());
 
         for (int i = 0; i < vehiculos.tamanio(); i++) {
@@ -187,6 +198,7 @@ public class SistemaViajes {
 
             if (candidato.isDisponible()) {
                 if (rnd != null && rnd.nextDouble() < PROBABILIDAD_RECHAZO) {
+                    estadisticas.registrarViajeRechazado();
                     continue;
                 }
                 aceptarViaje(candidato, usuario);
@@ -312,6 +324,15 @@ public class SistemaViajes {
      * @param vehiculo Vehiculo que completo el viaje
      */
     public void completarTransito(Vehiculo vehiculo) {
+        double etaTotal = 0;
+        int[] ruta = vehiculo.getRutaActiva();
+        for (int i = 0; i < ruta.length - 1; i++) {
+            etaTotal += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
+        }
+        double distanciaKm = etaTotal * VELOCIDAD_PROMEDIO_M_S / 1000.0;
+        double tarifa = calcularTarifa(etaTotal);
+        estadisticas.registrarViajeCompletado(etaTotal, tarifa, distanciaKm);
+
         vehiculo.setEstado(EstadoVehiculo.DISPONIBLE);
         vehiculo.setPasajeroAbordo(null);
         vehiculo.setRutaActiva(new int[0]);

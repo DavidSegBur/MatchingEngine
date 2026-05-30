@@ -33,7 +33,7 @@ public class GestorSimulacion {
     private final SistemaViajes sistema;
     private final MapCanvas renderizador;
     private final GrafoMapa grafo;
-    private final CalculadorRutas ruteador;
+    private CalculadorRutas ruteador;
     private final Random rnd;
     private final AnimationTimer timer;
     private long ultimoTick;
@@ -64,6 +64,14 @@ public class GestorSimulacion {
                 }
             }
         };
+    }
+
+    /**
+     * Cambia el algoritmo de ruteo usado por el gestor de simulacion.
+     * @param ruteador Nueva instancia del algoritmo de ruteo
+     */
+    public void setRuteador(CalculadorRutas ruteador) {
+        this.ruteador = ruteador;
     }
 
     /**
@@ -235,3 +243,4 @@ public class GestorSimulacion {
         sistema.registrarVehiculo(v);
     }
 }
+

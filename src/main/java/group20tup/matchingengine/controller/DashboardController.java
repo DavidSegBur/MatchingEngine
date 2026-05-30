@@ -5,7 +5,9 @@ import group20tup.matchingengine.model.recursos.MetadataNodo;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
+import group20tup.matchingengine.model.utilidades.CalculadorRutas;
 import group20tup.matchingengine.model.utilidades.calculadorescaminos.DijkstraRutas;
+import group20tup.matchingengine.model.utilidades.calculadorescaminos.FloydWarshallRutas;
 import group20tup.matchingengine.model.utilidades.sistema.GestorSimulacion;
 import group20tup.matchingengine.model.utilidades.sistema.SistemaViajes;
 import group20tup.matchingengine.view.MapCanvas;
@@ -16,6 +18,7 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
@@ -45,12 +48,21 @@ public class DashboardController {
     private StackPane mapContainer;
     @FXML
     private VBox sidePanel;
+    @FXML
+    private ChoiceBox<String> algoritmoSelector;
+    @FXML
+    private ProgressIndicator floydProgress;
+    @FXML
+    private Label lblFloydStatus;
 
     private GrafoMapa grafoMapa;
     private ProyeccionMapa proyeccion;
     private MapCanvas renderizadorMapa;
     private GestorSimulacion gestor;
     private SistemaViajes sistema;
+    private CalculadorRutas dijkstraRuteador;
+    private volatile CalculadorRutas floydRuteador;
+    private volatile boolean floydListo = false;
     private Label lblInfo;
     private Label lblBusyQueue;
     private double mouseX;
@@ -203,6 +215,57 @@ public class DashboardController {
         }
     }
 
+    private void precomputarFloydEnBackground() {
+        floydProgress.setVisible(true);
+        lblFloydStatus.setText("Precomputando Floyd-Warshall...");
+        algoritmoSelector.setDisable(true);
+
+        Task<Void> floydTask = new Task<>() {
+            @Override
+            protected Void call() {
+                floydRuteador = new FloydWarshallRutas(grafoMapa);
+                return null;
+            }
+        };
+
+        floydTask.setOnSucceeded(e -> {
+            floydListo = true;
+            floydProgress.setVisible(false);
+            lblFloydStatus.setText("Floyd-Warshall listo");
+            algoritmoSelector.setDisable(false);
+        });
+
+        floydTask.setOnFailed(e -> {
+            floydProgress.setVisible(false);
+            lblFloydStatus.setText("Error precomputando Floyd-Warshall");
+            algoritmoSelector.setDisable(false);
+            System.err.println("Error en Floyd-Warshall: " + floydTask.getException().getMessage());
+        });
+
+        new Thread(floydTask).start();
+    }
+
+    private void onAlgoritmoCambiado(String algoritmo) {
+        if ("Floyd-Warshall".equals(algoritmo)) {
+            if (floydListo) {
+                sistema.setRuteador(floydRuteador);
+                gestor.setRuteador(floydRuteador);
+                lblInfo.setText("Algoritmo cambiado a Floyd-Warshall");
+            } else {
+                algoritmoSelector.setValue("Dijkstra");
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Precomputando");
+                alert.setHeaderText("Floyd-Warshall se esta precomputando");
+                alert.setContentText("Espere a que termine el calculo inicial...");
+                alert.showAndWait();
+            }
+        } else {
+            sistema.setRuteador(dijkstraRuteador);
+            gestor.setRuteador(dijkstraRuteador);
+            lblInfo.setText("Algoritmo cambiado a Dijkstra");
+        }
+    }
+
     /**
      * Inicializa el controlador despues de que el FXML ha sido cargado.
      * <p>
@@ -238,9 +301,17 @@ public class DashboardController {
             renderizadorMapa = new MapCanvas(mapaCanvas, grafoMapa, proyeccion);
             renderizadorMapa.inicializar();
 
-            DijkstraRutas ruteador = new DijkstraRutas(grafoMapa);
-            sistema = new SistemaViajes(grafoMapa, ruteador);
-            gestor = new GestorSimulacion(sistema, renderizadorMapa, grafoMapa, ruteador);
+            dijkstraRuteador = new DijkstraRutas(grafoMapa);
+            sistema = new SistemaViajes(grafoMapa, dijkstraRuteador);
+            gestor = new GestorSimulacion(sistema, renderizadorMapa, grafoMapa, dijkstraRuteador);
+
+            algoritmoSelector.getItems().addAll("Dijkstra", "Floyd-Warshall");
+            algoritmoSelector.setValue("Dijkstra");
+            algoritmoSelector.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> {
+                if (val != null) onAlgoritmoCambiado(val);
+            });
+
+            precomputarFloydEnBackground();
 
             mapaCanvas.widthProperty().bind(mapContainer.widthProperty());
             mapaCanvas.heightProperty().bind(mapContainer.heightProperty());

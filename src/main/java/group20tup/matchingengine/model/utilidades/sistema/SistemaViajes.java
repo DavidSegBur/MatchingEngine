@@ -31,7 +31,7 @@ public class SistemaViajes {
     private static final double VELOCIDAD_PROMEDIO_M_S = 25.0 / 3.6;
 
     private final GrafoDirigido grafo;
-    private final CalculadorRutas ruteador;
+    private CalculadorRutas ruteador;
     private final ListaDoubleLinkedL vehiculos;
     private final ListaDoubleLinkedL usuarios;
     private final ColaPrioridadMonticulo colaOcupados;
@@ -47,6 +47,22 @@ public class SistemaViajes {
         this.vehiculos = new ListaDoubleLinkedL();
         this.usuarios = new ListaDoubleLinkedL();
         this.colaOcupados = new ColaPrioridadMonticulo(20);
+    }
+
+    /**
+     * Cambia el algoritmo de ruteo en tiempo de ejecucion.
+     * @param ruteador Nueva instancia del algoritmo de ruteo
+     */
+    public void setRuteador(CalculadorRutas ruteador) {
+        this.ruteador = ruteador;
+    }
+
+    /**
+     * Devuelve el algoritmo de ruteo actual.
+     * @return Instancia actual del calculador de rutas
+     */
+    public CalculadorRutas getRuteador() {
+        return ruteador;
     }
 
     /**

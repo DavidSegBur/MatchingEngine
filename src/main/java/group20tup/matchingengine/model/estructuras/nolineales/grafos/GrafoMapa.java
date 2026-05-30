@@ -182,6 +182,15 @@ public class GrafoMapa extends GrafoDirigido {
         }
     }
 
+    /**
+     * Calcula la distancia en kilometros entre dos coordenadas geograficas
+     * usando la formula del haversine.
+     * @param lat1 Latitud del punto de origen en grados
+     * @param lon1 Longitud del punto de origen en grados
+     * @param lat2 Latitud del punto de destino en grados
+     * @param lon2 Longitud del punto de destino en grados
+     * @return Distancia en kilometros
+     */
     private double calcularHaversine(double lat1, double lon1, double lat2, double lon2) {
         final double RADIO_TIERRA_METROS = 6371000.0;
         double dLat = Math.toRadians(lat2 - lat1);

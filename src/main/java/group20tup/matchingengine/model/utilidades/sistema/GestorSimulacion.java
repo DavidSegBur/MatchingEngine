@@ -145,10 +145,20 @@ public class GestorSimulacion {
         renderizarFrame();
     }
 
+    /**
+     * Verifica si el vehiculo ha llegado al nodo destino de su ruta actual.
+     * @param v Vehiculo a verificar
+     * @return true si el vehiculo esta en el ultimo nodo de su ruta
+     */
     private boolean estaEnDestino(Vehiculo v) {
         return v.getIndiceRuta() >= v.getRutaActiva().length - 1 && v.getProgreso() >= 1.0;
     }
 
+    /**
+     * Avanza una posicion del vehiculo en su ruta hacia el nodo siguiente.
+     * Si la ruta esta vacia o ya llego al destino, se detiene sin avanzar.
+     * @param v Vehiculo cuyo progreso se avanza
+     */
     private void avanzarProgreso(Vehiculo v) {
         int[] ruta = v.getRutaActiva();
         if (ruta.length < 2) return;

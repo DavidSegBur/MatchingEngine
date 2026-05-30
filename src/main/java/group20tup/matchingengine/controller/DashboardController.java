@@ -70,6 +70,11 @@ public class DashboardController {
     private boolean dragging;
     private long ultimoRenderDrag;
 
+    /**
+     * Captura la posicion inicial del mouse al presionar el boton.
+     * Se usa para detectar arrastres y diferenciar clics de drags.
+     * @param e Evento de presion del mouse
+     */
     private void onMousePressed(MouseEvent e) {
         mouseX = e.getX();
         mouseY = e.getY();
@@ -77,6 +82,12 @@ public class DashboardController {
         ultimoRenderDrag = 0;
     }
 
+    /**
+     * Desplaza la proyeccion del mapa arrastrando el canvas con el mouse.
+     * El renderizado se actualiza con un throttle de 30ms para evitar
+     * re-renderizados excesivos durante el arrastre.
+     * @param e Evento de arrastre del mouse
+     */
     private void onMouseDragged(MouseEvent e) {
         double dx = e.getX() - mouseX;
         double dy = e.getY() - mouseY;
@@ -93,6 +104,13 @@ public class DashboardController {
         }
     }
 
+    /**
+     * Maneja los clics sobre el canvas del mapa.
+     * Detecta si el clic fue sobre un usuario (inicia solicitud de viaje)
+     * o sobre un vehiculo (muestra informacion del estado). Ignora clics
+     * que ocurren inmediatamente despues de un arrastre.
+     * @param e Evento de clic del mouse
+     */
     private void onCanvasClick(MouseEvent e) {
         if (dragging) return;
 
@@ -110,6 +128,12 @@ public class DashboardController {
         }
     }
 
+    /**
+     * Aplica zoom a la proyeccion del mapa usando la rueda del mouse.
+     * El factor de zoom es 1.1x por cada paso hacia arriba y 0.91x (1/1.1)
+     * por cada paso hacia abajo. El zoom se centra en la posicion del cursor.
+     * @param e Evento de scroll del mouse
+     */
     private void onScroll(ScrollEvent e) {
         double dy = e.getDeltaY();
         if (dy == 0) return;
@@ -119,6 +143,13 @@ public class DashboardController {
         e.consume();
     }
 
+    /**
+     * Procesa la solicitud de viaje de un usuario desde la interfaz grafica.
+     * Verifica disponibilidad y alcanzabilidad de vehiculos, y si es posible
+     * muestra un dialogo con los detalles del viaje asignado (ETA, distancia,
+     * tarifa y patente). Si el usuario es inalcanzable lo elimina del mapa.
+     * @param usuario Usuario que solicita el viaje
+     */
     private void solicitarViajeUI(Usuario usuario) {
         boolean algunDisponible = false;
         boolean algunAlcanzable = false;
@@ -163,6 +194,13 @@ public class DashboardController {
                 aceptado.getPatente(), eta, distanciaKm, tarifa));
     }
 
+    /**
+     * Muestra en el panel lateral la informacion de un vehiculo seleccionado.
+     * Si el vehiculo esta DISPONIBLE muestra telemetria basica (patente, estado,
+     * posicion, ubicacion). Si esta ocupado muestra la cola de vehiculos
+     * ocupados ordenada por tiempo restante ascendente.
+     * @param v Vehiculo a inspeccionar
+     */
     private void mostrarInfoVehiculo(Vehiculo v) {
         MetadataNodo nodo = (MetadataNodo) grafoMapa.getListaEsquinas().devolver(v.getNodoActual());
 
@@ -215,6 +253,12 @@ public class DashboardController {
         }
     }
 
+    /**
+     * Lanza un hilo en segundo plano para precomputar todas las rutas
+     * con Floyd-Warshall. Mientras se ejecuta, el selector de algoritmo
+     * se deshabilita y se muestra un indicador de progreso. Al finalizar,
+     * se habilita el selector y se marca Floyd como listo.
+     */
     private void precomputarFloydEnBackground() {
         floydProgress.setVisible(true);
         lblFloydStatus.setText("Precomputando Floyd-Warshall...");
@@ -245,6 +289,12 @@ public class DashboardController {
         new Thread(floydTask).start();
     }
 
+    /**
+     * Cambia el algoritmo de ruteo activo en el sistema y el gestor.
+     * Si se selecciona Floyd-Warshall y aun no esta precomputado,
+     * muestra un alerta y mantiene Dijkstra como activo.
+     * @param algoritmo Nombre del algoritmo seleccionado ("Dijkstra" o "Floyd-Warshall")
+     */
     private void onAlgoritmoCambiado(String algoritmo) {
         if ("Floyd-Warshall".equals(algoritmo)) {
             if (floydListo) {

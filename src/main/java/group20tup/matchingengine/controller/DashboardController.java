@@ -356,6 +356,20 @@ public class DashboardController {
                     }
                 });
             }
+
+            if (sidePanel.getScene() != null) {
+                sidePanel.getScene().widthProperty().addListener((w, o, n) -> {
+                    sidePanel.setPrefWidth(Math.max(180, Math.min(350, n.doubleValue() * 0.2)));
+                });
+            } else {
+                sidePanel.sceneProperty().addListener((obs, old, scene) -> {
+                    if (scene != null) {
+                        scene.widthProperty().addListener((w, o, n) -> {
+                            sidePanel.setPrefWidth(Math.max(180, Math.min(350, n.doubleValue() * 0.2)));
+                        });
+                    }
+                });
+            }
         });
 
         loadTask.setOnFailed(e -> {

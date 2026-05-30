@@ -18,7 +18,7 @@
     </center>
     <right>
         <VBox fx:id="sidePanel"
-              prefWidth="240"
+              minWidth="180"
               maxWidth="350"
               spacing="8"
               style="-fx-background-color: #f5f5f5; -fx-padding: 8;">

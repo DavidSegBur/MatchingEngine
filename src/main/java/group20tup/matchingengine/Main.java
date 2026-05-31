@@ -28,6 +28,7 @@ public class Main extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/group20tup/matchingengine/fxml/dashboard.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 1200, 800);
+        scene.getStylesheets().add(Main.class.getResource("/group20tup/matchingengine/css/dashboard.css").toExternalForm());
         stage.setTitle("Matching Engine - Gestión de transporte!");
         stage.setMinWidth(800);
         stage.setMinHeight(600);

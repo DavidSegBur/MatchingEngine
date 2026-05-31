@@ -445,15 +445,15 @@ public class DashboardController {
 
             lblInfo = new Label("Haga clic en un usuario\npara solicitar un viaje,\no en un vehiculo para\nver su informacion.");
             lblInfo.setWrapText(true);
-            lblInfo.setStyle("-fx-font-size: 12;");
+            lblInfo.getStyleClass().add("info-label");
 
             lblColaDespacho = new Label("");
             lblColaDespacho.setWrapText(true);
-            lblColaDespacho.setStyle("-fx-font-size: 11; -fx-font-family: monospace;");
+            lblColaDespacho.getStyleClass().add("mono-label");
 
             lblBusyQueue = new Label("");
             lblBusyQueue.setWrapText(true);
-            lblBusyQueue.setStyle("-fx-font-size: 11; -fx-font-family: monospace;");
+            lblBusyQueue.getStyleClass().add("mono-label");
 
             ScrollPane busyScroll = new ScrollPane(lblBusyQueue);
             busyScroll.setFitToWidth(true);
@@ -461,17 +461,32 @@ public class DashboardController {
             busyScroll.setMaxHeight(250);
             busyScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             busyScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-            sidePanel.getChildren().addAll(lblInfo, lblColaDespacho, busyScroll);
+
+            ScrollPane infoScroll = new ScrollPane(lblInfo);
+            infoScroll.setFitToWidth(true);
+            infoScroll.setPrefHeight(100);
+            infoScroll.setMaxHeight(120);
+            infoScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            infoScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+            ScrollPane colaScroll = new ScrollPane(lblColaDespacho);
+            colaScroll.setFitToWidth(true);
+            colaScroll.setPrefHeight(120);
+            colaScroll.setMaxHeight(200);
+            colaScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+            colaScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+            sidePanel.getChildren().addAll(infoScroll, colaScroll, busyScroll);
 
             Label sep = new Label("─────────────────");
-            sep.setStyle("-fx-font-size: 10; -fx-text-fill: #ccc; -fx-padding: 4 0 0 0;");
+            sep.getStyleClass().add("separator-label");
 
             Label lblStatsHeader = new Label("Estadisticas");
-            lblStatsHeader.setStyle("-fx-font-weight: bold; -fx-font-size: 12;");
+            lblStatsHeader.getStyleClass().add("stats-header");
 
             lblStats = new Label("(aun sin datos)");
             lblStats.setWrapText(true);
-            lblStats.setStyle("-fx-font-size: 11; -fx-font-family: monospace;");
+            lblStats.getStyleClass().add("stats-content");
 
             sidePanel.getChildren().addAll(sep, lblStatsHeader, lblStats);
 
@@ -499,16 +514,22 @@ public class DashboardController {
                 });
             }
 
+            var widthListener = (javafx.beans.value.ChangeListener<Number>) (w, o, n) -> {
+                double wVal = n.doubleValue();
+                sidePanel.setPrefWidth(Math.max(180, Math.min(350, wVal * 0.2)));
+                if (wVal < 1000 && !sidePanel.getStyleClass().contains("narrow")) {
+                    sidePanel.getStyleClass().add("narrow");
+                } else if (wVal >= 1000) {
+                    sidePanel.getStyleClass().remove("narrow");
+                }
+            };
+
             if (sidePanel.getScene() != null) {
-                sidePanel.getScene().widthProperty().addListener((w, o, n) -> {
-                    sidePanel.setPrefWidth(Math.max(180, Math.min(350, n.doubleValue() * 0.2)));
-                });
+                sidePanel.getScene().widthProperty().addListener(widthListener);
             } else {
                 sidePanel.sceneProperty().addListener((obs, old, scene) -> {
                     if (scene != null) {
-                        scene.widthProperty().addListener((w, o, n) -> {
-                            sidePanel.setPrefWidth(Math.max(180, Math.min(350, n.doubleValue() * 0.2)));
-                        });
+                        scene.widthProperty().addListener(widthListener);
                     }
                 });
             }

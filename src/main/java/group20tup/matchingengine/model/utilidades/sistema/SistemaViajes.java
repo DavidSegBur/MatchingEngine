@@ -313,6 +313,34 @@ public class SistemaViajes {
     }
 
     /**
+     * Genera el texto formateado de los candidatos restantes en la cola de
+     * despacho activa, excluyendo los vehiculos que ya fueron procesados
+     * (aceptaron o rechazaron).
+     * <p>
+     *     Copia la cola de despacho activa actual y la drena para producir
+     *     un listado numerado con patente y ETA de los vehiculos aun en
+     *     espera de ser evaluados.
+     * </p>
+     * @return Texto con el listado de vehiculos candidatos restantes ordenados
+     *         por ETA, o "(sin candidatos)" si no quedan candidatos
+     */
+    public String obtenerTextoColaDespachoRestante() {
+        if (colaDespachoActiva == null || colaDespachoActiva.estaVacia()) {
+            return "(sin candidatos)";
+        }
+        ColaPrioridadMonticulo copia = new ColaPrioridadMonticulo(colaDespachoActiva);
+        StringBuilder sb = new StringBuilder("── Cola de despacho ──\n");
+        int count = 0;
+        while (!copia.estaVacia()) {
+            int idx = copia.extraerMin();
+            Vehiculo v = (Vehiculo) vehiculos.devolver(idx);
+            double eta = calcularETA(v.getNodoActual(), usuarioDespachando.getNodoOrigen());
+            sb.append(String.format("%d. %s — %.0fs\n", ++count, v.getPatente(), eta));
+        }
+        return sb.toString();
+    }
+
+    /**
      * Procesa una solicitud de viaje sin simulacion de rechazo.
      * <p>
      *     Coloca todos los vehiculos disponibles en la cola de despacho

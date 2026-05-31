@@ -270,33 +270,12 @@ public class DashboardController {
                     aceptado.getPatente(), eta, distanciaKm, tarifa));
         } else if (sistema.hayDespachoActivo()) {
             lblInfo.setText("Buscando conductor...\n(%d/%d)".formatted(proc, total));
-            actualizarTextoColaDespacho(proc);
+            lblColaDespacho.setText(sistema.obtenerTextoColaDespachoRestante());
             pausaDespacho.playFromStart();
         } else {
             lblColaDespacho.setText("");
             lblInfo.setText("No hay vehiculos disponibles\npara el usuario " + usuarioDespachando.getId() + ".");
         }
-    }
-
-    private void actualizarTextoColaDespacho(int procesados) {
-        String actual = lblColaDespacho.getText();
-        if (actual == null || actual.isEmpty()) return;
-        String[] lineas = actual.split("\n");
-        StringBuilder sb = new StringBuilder(lineas[0]).append("\n");
-        for (int i = 1; i < lineas.length; i++) {
-            String linea = lineas[i];
-            int numOrden = i;
-            if (numOrden <= procesados) {
-                sb.append(linea).append("  ✗\n");
-            } else {
-                if (numOrden == procesados + 1) {
-                    sb.append("→ ").append(linea).append("  ← evaluando\n");
-                } else {
-                    sb.append("  ").append(linea).append("\n");
-                }
-            }
-        }
-        lblColaDespacho.setText(sb.toString());
     }
 
     /**

@@ -13,6 +13,7 @@ import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
 import group20tup.matchingengine.model.utilidades.calculadorescaminos.DijkstraRutas;
 import group20tup.matchingengine.model.utilidades.calculadorescaminos.FloydWarshallRutas;
+import group20tup.matchingengine.model.utilidades.sistema.GestorSimulacion;
 import group20tup.matchingengine.model.utilidades.sistema.SistemaViajes;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -632,5 +633,52 @@ public class MatchingEngineTests {
         s.iniciarDespacho(u, null);
         assertEquals(antes + 1, s.getEstadisticas().getViajesSolicitados(),
                 "iniciarDespacho debe incrementar el contador de solicitudes");
+    }
+
+    @Test
+    @DisplayName("tick() mantiene densidad: 5 usuarios, 10-15 vehiculos")
+    void testTickMantieneDensidad() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
+        gestor.inicializarEntidades();
+
+        assertEquals(5, s.totalUsuarios(), "Debe haber 5 usuarios tras inicializar");
+        assertTrue(s.totalVehiculos() >= 10 && s.totalVehiculos() <= 15,
+                "Vehiculos debe estar entre 10 y 15 tras inicializar");
+
+        gestor.tick();
+
+        assertEquals(5, s.totalUsuarios(), "Debe mantener 5 usuarios tras tick");
+        assertTrue(s.totalVehiculos() >= 10 && s.totalVehiculos() <= 15,
+                "Debe mantener vehiculos entre 10 y 15 tras tick");
+    }
+
+    @Test
+    @DisplayName("10 ticks seguidos sin excepcion, densidad constante")
+    void testTickMultipleMantieneDensidad() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
+        gestor.inicializarEntidades();
+
+        for (int i = 0; i < 10; i++) {
+            assertDoesNotThrow(() -> gestor.tick());
+        }
+
+        assertEquals(5, s.totalUsuarios(), "Debe mantener 5 usuarios tras 10 ticks");
+        assertTrue(s.totalVehiculos() >= 10 && s.totalVehiculos() <= 15,
+                "Vehiculos debe estar entre 10 y 15 tras 10 ticks");
+    }
+
+    @Test
+    @DisplayName("tick() funciona con renderizador null sin NPE")
+    void testTickSinJavaFX() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
+
+        gestor.inicializarEntidades();
+        assertDoesNotThrow(() -> gestor.tick());
+        assertDoesNotThrow(() -> gestor.tick());
+        assertDoesNotThrow(() -> gestor.tick());
+        assertDoesNotThrow(() -> gestor.renderizarFrame());
     }
 }

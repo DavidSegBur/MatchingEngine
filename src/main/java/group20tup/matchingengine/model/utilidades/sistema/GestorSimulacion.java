@@ -6,25 +6,23 @@ import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
 import group20tup.matchingengine.model.utilidades.CalculadorRutas;
 import group20tup.matchingengine.view.MapCanvas;
-import javafx.animation.AnimationTimer;
 import java.util.Random;
 
 /**
  * Motor de simulacion en tiempo real del sistema de flota de vehiculos.
  * <p>
- *     Gestiona el ciclo principal de la simulacion mediante un
- *     {@code AnimationTimer} que ejecuta pasos discretos a intervalos
- *     regulares. Mantiene una densidad constante de usuarios y vehiculos,
- *     controla el desplazamiento autonomo (roaming) de los vehiculos
- *     disponibles, avanza los vehiculos que siguen rutas activas,
- *     detecta eventos de recogida y finalizacion de viajes, y actualiza
- *     el renderizado del mapa en cada tick.
+ *     Gestiona el ciclo principal de la simulacion. Mantiene una densidad
+ *     constante de usuarios y vehiculos, controla el desplazamiento autonomo
+ *     (roaming) de los vehiculos disponibles, avanza los vehiculos que siguen
+ *     rutas activas, detecta eventos de recogida y finalizacion de viajes, y
+ *     actualiza el renderizado del mapa en cada tick. No depende de JavaFX
+ *     directamente; el bucle de animacion es gestionado externamente por
+ *     un adaptador.
  * </p>
  * @author Ivan
- * @version 1.0
+ * @version 2.0
  */
-public class GestorSimulacion {
-    private static final long INTERVALO_TICK = 350_000_000;
+public class GestorSimulacion implements MotorSimulacion {
     private static final double PASO_INTERPOLACION = 0.33;
     private static final int USUARIOS_OBJETIVO = 5;
     private static final int VEHICULOS_MIN = 10;
@@ -35,8 +33,6 @@ public class GestorSimulacion {
     private final GrafoMapa grafo;
     private CalculadorRutas ruteador;
     private final Random rnd;
-    private final AnimationTimer timer;
-    private long ultimoTick;
     private int contadorUsuarios;
     private int contadorVehiculos;
 
@@ -52,18 +48,8 @@ public class GestorSimulacion {
         this.grafo = grafo;
         this.ruteador = ruteador;
         this.rnd = new Random();
-        this.ultimoTick = 0;
         this.contadorUsuarios = 0;
         this.contadorVehiculos = 0;
-        this.timer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if (now - ultimoTick >= INTERVALO_TICK) {
-                    tick();
-                    ultimoTick = now;
-                }
-            }
-        };
     }
 
     /**
@@ -75,13 +61,14 @@ public class GestorSimulacion {
     }
 
     /**
-     * Inicia la simulacion creando las entidades iniciales y arrancando el timer.
+     * Crea las entidades iniciales de la simulacion y renderiza el frame inicial.
      * <p>
-     *     Crea 5 usuarios y 10 vehiculos ubicados aleatoriamente en el grafo,
-     *     renderiza el mapa inicial y comienza el bucle de simulacion.
+     *     Crea 5 usuarios y 10 vehiculos ubicados aleatoriamente en el grafo
+     *     y renderiza el mapa inicial. No inicia el bucle de animacion;
+     *     eso debe hacerlo el adaptador externo.
      * </p>
      */
-    public void iniciar() {
+    public void inicializarEntidades() {
         for (int i = 0; i < USUARIOS_OBJETIVO; i++) {
             crearUsuario();
         }
@@ -89,7 +76,6 @@ public class GestorSimulacion {
             crearVehiculo();
         }
         renderizarFrame();
-        timer.start();
     }
 
     /**
@@ -99,7 +85,9 @@ public class GestorSimulacion {
      *     completo (por ejemplo al redimensionar la ventana).
      * </p>
      */
+    @Override
     public void renderizarFrame() {
+        if (renderizador == null) return;
         renderizador.redibujar();
 
         for (int i = 0; i < sistema.totalVehiculos(); i++) {
@@ -118,11 +106,11 @@ public class GestorSimulacion {
      * <p>
      *     En cada tick: desplaza los vehiculos disponibles (roaming) y los que
      *     siguen rutas activas, procesa los eventos de llegada (pickup y
-     *     finalizacion de viaje), mantiene la densidad objetivo de entidades
-     *     y actualiza el renderizado del mapa.
+     *     finalizacion de viaje) y mantiene la densidad objetivo de entidades.
      * </p>
      */
-    private void tick() {
+    @Override
+    public void tick() {
         for (int i = 0; i < sistema.totalVehiculos(); i++) {
             Vehiculo v = sistema.getVehiculo(i);
             int[] ruta = v.getRutaActiva();
@@ -151,7 +139,6 @@ public class GestorSimulacion {
 
         procesarArribos();
         mantenerDensidad();
-        renderizarFrame();
     }
 
     /**

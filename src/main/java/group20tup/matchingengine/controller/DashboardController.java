@@ -75,6 +75,7 @@ public class DashboardController {
     private Label lblBusyQueue;
     private Label lblColaDespacho;
     private Label lblStats;
+    private SimulacionFXAdapter adaptadorSimulacion;
     private PauseTransition pausaDespacho;
     private Usuario usuarioDespachando;
     private double mouseX;
@@ -482,13 +483,17 @@ public class DashboardController {
 
             if (mapaCanvas.getScene() != null) {
                 renderizadorMapa.redibujar();
-                gestor.iniciar();
+                gestor.inicializarEntidades();
+                adaptadorSimulacion = new SimulacionFXAdapter(gestor);
+                adaptadorSimulacion.iniciar();
             } else {
                 mapaCanvas.sceneProperty().addListener((obs, old, scene) -> {
                     if (scene != null) {
                         Platform.runLater(() -> {
                             renderizadorMapa.redibujar();
-                            gestor.iniciar();
+                            gestor.inicializarEntidades();
+                            adaptadorSimulacion = new SimulacionFXAdapter(gestor);
+                            adaptadorSimulacion.iniciar();
                         });
                     }
                 });

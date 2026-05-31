@@ -7,6 +7,7 @@ import group20tup.matchingengine.model.utilidades.sistema.GestorSimulacion;
 import group20tup.matchingengine.model.utilidades.sistema.SistemaViajes;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -17,6 +18,9 @@ class GestorSimulacionTest {
     private static GrafoMapa mapaSalta;
     private static DijkstraRutas dijkstra;
 
+    private SistemaViajes s;
+    private GestorSimulacion gestor;
+
     @BeforeAll
     static void init() {
         mapaSalta = new GrafoMapa();
@@ -24,11 +28,15 @@ class GestorSimulacionTest {
         dijkstra = new DijkstraRutas(mapaSalta);
     }
 
+    @BeforeEach
+    void setUp() {
+        s = new SistemaViajes(mapaSalta, dijkstra);
+        gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
+    }
+
     @Test
     @DisplayName("tick() mantiene densidad: 5 usuarios, 10-15 vehiculos")
     void testTickMantieneDensidad() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
-        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
         gestor.inicializarEntidades();
 
         assertEquals(5, s.totalUsuarios());
@@ -43,8 +51,6 @@ class GestorSimulacionTest {
     @Test
     @DisplayName("10 ticks seguidos sin excepcion, densidad constante")
     void testTickMultipleMantieneDensidad() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
-        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
         gestor.inicializarEntidades();
 
         for (int i = 0; i < 10; i++) {
@@ -58,8 +64,6 @@ class GestorSimulacionTest {
     @Test
     @DisplayName("tick() funciona con renderizador null sin NPE")
     void testTickSinJavaFX() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
-        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
         gestor.inicializarEntidades();
 
         assertDoesNotThrow(() -> gestor.tick());
@@ -71,8 +75,6 @@ class GestorSimulacionTest {
     @Test
     @DisplayName("Vehiculo disponible sin ruta recibe ruta de 2 nodos adyacentes tras tick")
     void testRoamingVecinoAleatorio() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
-        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
         int nodo = 500;
         Vehiculo v = new Vehiculo("RTST", nodo);
         s.registrarVehiculo(v);
@@ -89,8 +91,6 @@ class GestorSimulacionTest {
     @Test
     @DisplayName("Roaming multiple: vehiculo se mueve a traves de varios nodos adyacentes")
     void testRoamingMultiplePasos() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
-        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
         int nodo = 500;
         Vehiculo v = new Vehiculo("RMLT", nodo);
         s.registrarVehiculo(v);
@@ -112,8 +112,6 @@ class GestorSimulacionTest {
     @Test
     @DisplayName("Vehiculo en nodo sin salidas usa ruta de 2 nodos a destino aleatorio")
     void testRoamingSinSalidasUsaDestinoAleatorio() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
-        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
         int nodo = 0;
         Vehiculo v = new Vehiculo("SNSL", nodo);
         s.registrarVehiculo(v);
@@ -128,8 +126,6 @@ class GestorSimulacionTest {
     @Test
     @DisplayName("Roaming no rompe las invariantes de densidad")
     void testRoamingMantieneDensidad() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
-        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
         gestor.inicializarEntidades();
 
         for (int i = 0; i < 50; i++) {
@@ -144,8 +140,6 @@ class GestorSimulacionTest {
     @Test
     @DisplayName("Vehiculo cambia de nodo tras multiples ticks de roaming")
     void testVehiculoSeMueveEntreNodosConsecutivos() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
-        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
         int nodo = 500;
         Vehiculo v = new Vehiculo("MOVE01", nodo);
         s.registrarVehiculo(v);

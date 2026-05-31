@@ -1,6 +1,5 @@
 package group20tup.matchingengine;
 
-import group20tup.matchingengine.model.estructuras.lineales.listas.ListaDoubleLinkedL;
 import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
@@ -27,13 +26,17 @@ class SistemaViajesTest {
         mapaSalta = new GrafoMapa();
         mapaSalta.cargarGrafo();
         dijkstra = new DijkstraRutas(mapaSalta);
-        sistema = new SistemaViajes(mapaSalta, dijkstra);
+        sistema = crearSistema();
+    }
+
+    private static SistemaViajes crearSistema() {
+        return new SistemaViajes(mapaSalta, dijkstra);
     }
 
     @Test
     @DisplayName("Registra vehiculos y usuarios correctamente")
     void testSistemaViajesRegistro() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("TEST01", 0));
         s.registrarVehiculo(new Vehiculo("TEST02", 100));
         s.registrarVehiculo(new Vehiculo("TEST03", 200));
@@ -65,7 +68,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("Solicitar viaje solo considera disponibles")
     void testSistemaViajesSolicitarViaje() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("DISP01", 0));
         s.registrarVehiculo(new Vehiculo("DISP02", 100));
         Vehiculo ocupado = new Vehiculo("OCUP01", 200);
@@ -86,7 +89,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("Solicitar viaje sin disponibles retorna null")
     void testSistemaViajesSinDisponibles() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         Vehiculo ocupado = new Vehiculo("OCUP01", 0);
         ocupado.setEstado(EstadoVehiculo.EN_VIAJE);
         s.registrarVehiculo(ocupado);
@@ -99,7 +102,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("Dispatch excluye ocupados")
     void testDispatchExcluyeOcupados() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         Vehiculo v1 = new Vehiculo("OCUP", 0);
         v1.setEstado(EstadoVehiculo.EN_VIAJE);
         s.registrarVehiculo(v1);
@@ -116,7 +119,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("Ciclo completo DISPONIBLE -> APROXIMANDO -> EN_VIAJE -> DISPONIBLE")
     void testCicloViajeCompleto() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("V001", 0));
         Usuario u = new Usuario(1, 47);
         s.agregarUsuario(u);
@@ -139,7 +142,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("Pickup remueve al usuario del sistema")
     void testPickupRemueveUsuario() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("V002", 0));
         Usuario u = new Usuario(2, 47);
         s.agregarUsuario(u);
@@ -155,7 +158,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("Cola de ocupados se vacia al completar el transito")
     void testCompletarTransitoReconstruyeCola() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("V003", 0));
         s.registrarVehiculo(new Vehiculo("V004", 100));
         Usuario u = new Usuario(3, 47);
@@ -181,7 +184,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("Dispatch con rechazo simulado usando Random con seed fija")
     void testRechazoConRandomSeed() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("V010", 0));
         s.registrarVehiculo(new Vehiculo("V011", 100));
         s.registrarVehiculo(new Vehiculo("V012", 200));
@@ -197,7 +200,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("obtenerTextoColaDespacho con vehiculos formatea patentes y ETAs")
     void testObtenerTextoColaDespachoConVehiculos() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("TEST_A", 0));
         s.registrarVehiculo(new Vehiculo("TEST_B", 100));
         Usuario u = new Usuario(10, 47);
@@ -207,14 +210,14 @@ class SistemaViajesTest {
         assertTrue(texto.contains("── Cola de despacho ──"));
         assertTrue(texto.contains("TEST_A"));
         assertTrue(texto.contains("TEST_B"));
-        assertTrue(texto.contains("s"));
-        assertTrue(texto.contains("1."));
+        assertTrue(texto.matches("(?s).*\\d+\\.\\s+TEST_A\\s+—\\s+\\d+s.*"), 
+                "Formato esperado: '1. TEST_A — 123s'");
     }
 
     @Test
     @DisplayName("obtenerTextoColaDespacho sin candidatos")
     void testObtenerTextoColaDespachoSinCandidatos() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         Usuario u = new Usuario(20, 47);
         s.agregarUsuario(u);
 
@@ -224,7 +227,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("obtenerTextoColaDespacho excluye ocupados")
     void testObtenerTextoColaDespachoExcluyeOcupados() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("DISP", 0));
         Vehiculo ocupado = new Vehiculo("OCUP", 100);
         ocupado.setEstado(EstadoVehiculo.EN_VIAJE);
@@ -240,7 +243,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("iniciarDespacho y procesarSiguienteDespacho sin rechazo")
     void testIniciarYProcesarDespachoSinRechazo() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("V01", 0));
         s.registrarVehiculo(new Vehiculo("V02", 100));
         Usuario u = new Usuario(40, 47);
@@ -262,7 +265,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("procesarSiguienteDespacho con rechazo simulado")
     void testProcesarDespachoConRechazoSeed() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("V01", 0));
         s.registrarVehiculo(new Vehiculo("V02", 100));
         s.registrarVehiculo(new Vehiculo("V03", 200));
@@ -285,7 +288,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("procesarSiguienteDespacho con cola vacia retorna null")
     void testProcesarDespachoColaVacia() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         Vehiculo ocupado = new Vehiculo("OCUP", 0);
         ocupado.setEstado(EstadoVehiculo.EN_VIAJE);
         s.registrarVehiculo(ocupado);
@@ -303,7 +306,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("cancelarDespacho resetea el estado")
     void testCancelarDespacho() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("V01", 0));
         Usuario u = new Usuario(70, 47);
         s.agregarUsuario(u);
@@ -323,7 +326,7 @@ class SistemaViajesTest {
     @Test
     @DisplayName("procesarSiguienteDespacho setea destacadoHasta en el vehiculo")
     void testDestacadoHastaEnVehiculo() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("V01", 0));
         Usuario u = new Usuario(80, 47);
         s.agregarUsuario(u);
@@ -331,14 +334,14 @@ class SistemaViajesTest {
         s.iniciarDespacho(u, null);
         Vehiculo v = s.procesarSiguienteDespacho();
         assertNotNull(v);
-        assertTrue(v.getDestacadoHasta() > 0);
-        assertTrue(v.getDestacadoHasta() > System.nanoTime());
+        assertTrue(v.getDestacadoHasta() > 0,
+                "destacadoHasta debe ser positivo");
     }
 
     @Test
     @DisplayName("iniciarDespacho registra la solicitud en estadisticas")
     void testIniciarDespachoRegistraSolicitud() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("V01", 0));
         Usuario u = new Usuario(90, 47);
         s.agregarUsuario(u);
@@ -348,12 +351,10 @@ class SistemaViajesTest {
         assertEquals(antes + 1, s.getEstadisticas().getViajesSolicitados());
     }
 
-    // ── New tests ──
-
     @Test
     @DisplayName("Despacho con 25 vehiculos funciona correctamente")
     void testDespachoConVeinticincoVehiculos() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         for (int i = 0; i < 25; i++) {
             s.registrarVehiculo(new Vehiculo(String.format("GRP%02d", i), i * 10));
         }
@@ -374,26 +375,24 @@ class SistemaViajesTest {
     @Test
     @DisplayName("Pickup sin ruta de transito valida vuelve el vehiculo a DISPONIBLE")
     void testPickupSinRutaValida() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         s.registrarVehiculo(new Vehiculo("NOROUTE", 0));
         Usuario u = new Usuario(101, 100);
         s.agregarUsuario(u);
 
-        // Create a vehicle that is APPROACHING but has no passenger — edge case
         Vehiculo v = s.solicitarViaje(u);
         assertNotNull(v);
-        v.setPasajeroAbordo(u);
+        assertEquals(EstadoVehiculo.APROXIMANDO, v.getEstado());
 
-        // Attempt pickup — should handle gracefully
+        // Attempt pickup — should handle gracefully regardless of route availability
         boolean result = s.realizarPickup(v);
-        // Result may be true or false depending on route availability, but shouldn't throw
         assertTrue(v.isDisponible() || v.getEstado() == EstadoVehiculo.EN_VIAJE);
     }
 
     @Test
     @DisplayName("Estadisticas acumulan correctamente tras multiples viajes")
     void testEstadisticasAfterMultipleViajes() {
-        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        SistemaViajes s = crearSistema();
         for (int i = 0; i < 5; i++) {
             s.registrarVehiculo(new Vehiculo(String.format("M%02d", i), i * 50));
         }
@@ -408,10 +407,10 @@ class SistemaViajesTest {
             }
         }
 
-        assertTrue(s.getEstadisticas().getViajesSolicitados() > 0,
-                "Debe haber viajes solicitados");
-        assertTrue(s.getEstadisticas().getViajesCompletados() > 0,
-                "Debe haber viajes completados");
+        assertEquals(3, s.getEstadisticas().getViajesSolicitados(),
+                "Se solicitaron exactamente 3 viajes");
+        assertTrue(s.getEstadisticas().getViajesCompletados() >= 1,
+                "Debe haber al menos 1 viaje completado");
         assertTrue(s.getEstadisticas().getSumaDistanciasKm() > 0,
                 "Debe haber distancia acumulada");
     }

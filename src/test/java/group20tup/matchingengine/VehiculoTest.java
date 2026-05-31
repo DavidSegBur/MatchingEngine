@@ -45,12 +45,12 @@ class VehiculoTest {
     }
 
     @Test
-    @DisplayName("DestacadoHasta expira correctamente")
-    void testVehiculoDestacadoExpirado() {
+    @DisplayName("setDestacadoHasta almacena correctamente el valor")
+    void testVehiculoDestacadoHasta() {
         Vehiculo v = new Vehiculo("EXP01", 0);
-        v.setDestacadoHasta(System.nanoTime() - 1);
-        assertTrue(v.getDestacadoHasta() < System.nanoTime(),
-                "destacadoHasta en el pasado debe ser menor que ahora");
+        assertEquals(0, v.getDestacadoHasta(), "Valor inicial debe ser 0");
+        v.setDestacadoHasta(12345L);
+        assertEquals(12345L, v.getDestacadoHasta());
     }
 
     @Test

@@ -1,5 +1,6 @@
 package group20tup.matchingengine;
 
+import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoDirigido;
 import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
 import group20tup.matchingengine.model.utilidades.calculadorescaminos.DijkstraRutas;
 
@@ -45,29 +46,23 @@ class RutasDijkstraTest {
     @Test
     @DisplayName("Ruta directa entre nodos adyacentes retorna 2 elementos")
     void testDijkstraRutaDirecta() {
-        // Find a pair of directly connected nodes in the graph
-        int orden = mapaSalta.getOrden();
-        for (int i = 0; i < orden; i++) {
-            for (int j = 0; j < orden; j++) {
-                if (i != j && mapaSalta.getMatrizCosto().areConnected(i, j)) {
-                    int[] ruta = dijkstra.calcularRuta(i, j);
-                    assertTrue(ruta.length >= 2,
-                            "Ruta directa entre " + i + " y " + j + " debe tener al menos 2 nodos");
-                    assertEquals(i, ruta[0]);
-                    assertEquals(j, ruta[ruta.length - 1]);
-                    return;
-                }
-            }
-        }
-        fail("No se encontro ninguna arista directa en el grafo");
+        GrafoDirigido grafo = new GrafoDirigido(3);
+        grafo.getMatrizCosto().actualizar(1.0, 0, 1);
+        DijkstraRutas d = new DijkstraRutas(grafo);
+        int[] ruta = d.calcularRuta(0, 1);
+        assertNotNull(ruta);
+        assertEquals(2, ruta.length);
+        assertEquals(0, ruta[0]);
+        assertEquals(1, ruta[1]);
     }
 
     @Test
     @DisplayName("Ruta inalcanzable retorna arreglo vacio")
     void testDijkstraRutaInalcanzable() {
-        // Most nodes are reachable in this graph; use self as base for empty unreachable test
-        // Dijkstra with same node returns [origen], not empty
-        int[] ruta = dijkstra.calcularRuta(0, 0);
-        assertEquals(1, ruta.length);
+        GrafoDirigido grafoSintetico = new GrafoDirigido(2);
+        DijkstraRutas d = new DijkstraRutas(grafoSintetico);
+        int[] ruta = d.calcularRuta(0, 1);
+        assertNotNull(ruta);
+        assertEquals(0, ruta.length);
     }
 }

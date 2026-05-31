@@ -37,18 +37,13 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
-    # Fix: Agregamos la propiedad para limpiar la versión y que sea compatible con Windows y Mac
-    - name: Build native installer (jlink + jpackage)
+    # Solución definitiva: Modifica el pom.xml al vuelo para que jpackage reciba "1.0.0" puro
+    - name: Remove SNAPSHOT version for Windows/Mac compatibility
       shell: bash
       run: |
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          ./mvnw.cmd clean compile javafx:jlink jpackage:jpackage -Djavafx.version=21 -Djpackage.appVersion=1.0.0 -Dapp.version=1.0.0
-        else
-          chmod +x mvnw
-          ./mvnw clean compile javafx:jlink jpackage:jpackage -Djavafx.version=21 -Djpackage.appVersion=1.0.0 -Dapp.version=1.0.0
-        fi
+        sed -i 's/1.0-SNAPSHOT/1.0.0/g' pom.xml
 
-    # Corregido: Distingue entre el script de Linux/Mac y el ejecutable .cmd de Windows
+    # Bloque de construcción UNIFICADO
     - name: Build native installer (jlink + jpackage)
       shell: bash
       run: |
@@ -59,26 +54,22 @@ jobs:
           ./mvnw clean compile javafx:jlink jpackage:jpackage
         fi
 
-    # Corregido: Buscamos la carpeta generada dinámicamente sin importar dónde la deje jpackage
     - name: Prepare artifact
       shell: bash
       run: |
-        # Buscamos de forma recursiva la carpeta "MatchingEngine" dentro de target/ para evitar fallos de rutas fijas
+        # Buscamos de forma recursiva la carpeta "MatchingEngine" dentro de target/
         TARGET_DIR=$(find target -type d -name "MatchingEngine" | head -n 1)
         
-        # Si find no funciona en Windows Git-Bash, probamos una ruta alternativa estándar
         if [ -z "$TARGET_DIR" ]; then
           TARGET_DIR="target/installer/MatchingEngine"
         fi
         
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          # Usamos 7z apuntando al directorio encontrado
           7z a ${{ matrix.artifact-name }} ./${TARGET_DIR}
         else
           tar -czf ${{ matrix.artifact-name }} ./${TARGET_DIR}
         fi
 
-    # Mantenemos tu paso de subida que está perfecto
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v2
       with:

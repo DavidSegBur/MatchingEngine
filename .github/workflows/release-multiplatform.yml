@@ -57,30 +57,40 @@ jobs:
     - name: Prepare artifact
       shell: bash
       run: |
-        # List contents of target directory for debugging
-        echo "Contents of target directory:"
-        ls -laR target/ | head -100
-        
-        # For jpackage output, look in target/installer or where the actual installers are created
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          # Find .exe or .msi files
-          INSTALLER=$(find target -type f \( -name "*.exe" -o -name "*.msi" \) | head -n 1)
-          if [ -n "$INSTALLER" ]; then
-            7z a ${{ matrix.artifact-name }} "$INSTALLER"
+        echo "=== Verificando estructura generada por jpackage ==="
+        ls -R target/installer/ 2>/dev/null || ls -R target/ 2>/dev/null | head -n 30
+
+        # Buscamos de forma robusta la raíz de la aplicación compilada (directorio o archivo)
+        # Si jpackage generó un instalador directo o una carpeta portable, lo capturamos.
+        INSTALLER_PATH=$(find target/installer target -maxdepth 3 -name "MatchingEngine" -o -name "MatchingEngine.app" -o -name "*.exe" -o -name "*.msi" 2>/dev/null | head -n 1)
+
+        # Si por alguna razón la búsqueda específica falla, usamos la carpeta base del instalador
+        if [ -z "$INSTALLER_PATH" ]; then
+          if [ -d "target/installer" ]; then
+            INSTALLER_PATH="target/installer"
           else
-            echo "ERROR: No Windows installer found"
-            exit 1
-          fi
-        else
-          # For Linux/Mac, look for the actual package output
-          INSTALLER=$(find target -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.pkg" -o -name "*.dmg" \) | head -n 1)
-          if [ -n "$INSTALLER" ]; then
-            tar -czf ${{ matrix.artifact-name }} "$INSTALLER"
-          else
-            echo "ERROR: No Linux/Mac installer found"
+            echo "ERROR: No se encontró la salida de jpackage en target/"
             exit 1
           fi
         fi
+
+        echo "Elemento a empaquetar encontrado en: $INSTALLER_PATH"
+
+        # Comprimimos según la plataforma utilizando el nombre exacto definido en la matriz
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          # Usamos 7z para crear un archivo .zip limpio en Windows
+          7z a "${{ matrix.artifact-name }}" "./$INSTALLER_PATH"
+        else
+          # Usamos tar para Linux y Mac para preservar los permisos de ejecución del binario
+          tar -czf "${{ matrix.artifact-name }}" "./$INSTALLER_PATH"
+        fi
+
+        # Validación final de existencia del comprimido
+        if [ ! -f "${{ matrix.artifact-name }}" ]; then
+          echo "ERROR: Falló la creación del artefacto comprimido: ${{ matrix.artifact-name }}"
+          exit 1
+        fi
+        echo "¡Artefacto creado con éxito!: ${{ matrix.artifact-name }}"
 
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v2

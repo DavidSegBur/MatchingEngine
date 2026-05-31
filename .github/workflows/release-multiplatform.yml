@@ -41,7 +41,7 @@ jobs:
     - name: Remove SNAPSHOT version for Windows/Mac compatibility
       shell: bash
       run: |
-        sed -i 's/1.0-SNAPSHOT/1.0.0/g' pom.xml
+        sed -i.bak 's/1.0-SNAPSHOT/1.0.0/g' pom.xml && rm -f pom.xml.bak
 
     # Bloque de construcción UNIFICADO
     - name: Build native installer (jlink + jpackage)

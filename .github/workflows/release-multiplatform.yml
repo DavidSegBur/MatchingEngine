@@ -59,23 +59,27 @@ jobs:
       run: |
         # List contents of target directory for debugging
         echo "Contents of target directory:"
-        find target -type d -name "*MatchingEngine*" -o -type d -name "installer" | head -20
-        ls -la target/ || echo "target directory does not exist"
+        ls -laR target/ | head -100
         
-        # Search for the MatchingEngine directory
-        TARGET_DIR=$(find target -type d -name "MatchingEngine" 2>/dev/null | head -n 1)
-        
-        if [ -z "$TARGET_DIR" ]; then
-          echo "ERROR: MatchingEngine directory not found in target/"
-          exit 1
-        fi
-        
-        echo "Found target directory: $TARGET_DIR"
-        
+        # For jpackage output, look in target/installer or where the actual installers are created
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          7z a ${{ matrix.artifact-name }} "$TARGET_DIR"
+          # Find .exe or .msi files
+          INSTALLER=$(find target -type f \( -name "*.exe" -o -name "*.msi" \) | head -n 1)
+          if [ -n "$INSTALLER" ]; then
+            7z a ${{ matrix.artifact-name }} "$INSTALLER"
+          else
+            echo "ERROR: No Windows installer found"
+            exit 1
+          fi
         else
-          tar -czf ${{ matrix.artifact-name }} -C "$(dirname "$TARGET_DIR")" "$(basename "$TARGET_DIR")"
+          # For Linux/Mac, look for the actual package output
+          INSTALLER=$(find target -type f \( -name "*.deb" -o -name "*.rpm" -o -name "*.pkg" -o -name "*.dmg" \) | head -n 1)
+          if [ -n "$INSTALLER" ]; then
+            tar -czf ${{ matrix.artifact-name }} "$INSTALLER"
+          else
+            echo "ERROR: No Linux/Mac installer found"
+            exit 1
+          fi
         fi
 
     - name: Upload to GitHub Release

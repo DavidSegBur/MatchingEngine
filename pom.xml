@@ -12,6 +12,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.12.1</junit.version>
+        <jpackage.type>APP_IMAGE</jpackage.type>
     </properties>
 
     <dependencies>
@@ -80,6 +81,21 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <name>MatchingEngine</name>
+                    <appVersion>${project.version}</appVersion>
+                    <vendor>Group 20</vendor>
+                    <runtimeImage>${project.build.directory}/app</runtimeImage>
+                    <module>group20tup.matchingengine/group20tup.matchingengine.Main</module>
+                    <type>${jpackage.type}</type>
+                    <destination>${project.build.directory}/installer</destination>
+                    <icon>src/main/resources/group20tup/matchingengine/data/mapa.png</icon>
+                </configuration>
             </plugin>
         </plugins>
     </build>

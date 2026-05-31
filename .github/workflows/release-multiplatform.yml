@@ -1,0 +1,55 @@
+name: Multiplatform Native Installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-installers:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact-name: MatchingEngine-Linux.tar.gz
+          - os: windows-latest
+            artifact-name: MatchingEngine-Windows.zip
+          - os: macos-latest
+            artifact-name: MatchingEngine-Mac.tar.gz
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build native installer (jlink + jpackage)
+      shell: bash
+      run: |
+        chmod +x mvnw
+        ./mvnw clean compile javafx:jlink jpackage:jpackage -DskipTests
+
+    - name: Prepare artifact
+      shell: bash
+      run: |
+        cd target/installer
+        if [ "${{ runner.os }}" = "Windows" ]; then
+          7z a ../../${{ matrix.artifact-name }} MatchingEngine/
+        else
+          tar -czf ../../${{ matrix.artifact-name }} MatchingEngine/
+        fi
+
+    - name: Upload to GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: ${{ matrix.artifact-name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

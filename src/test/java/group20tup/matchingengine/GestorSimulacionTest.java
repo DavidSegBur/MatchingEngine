@@ -95,12 +95,12 @@ class GestorSimulacionTest {
         Vehiculo v = new Vehiculo("RMLT", nodo);
         s.registrarVehiculo(v);
 
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 50; i++) {
             gestor.tick();
         }
 
         assertTrue(v.getNodoActual() != 500 || v.getIndiceRuta() > 0,
-                "El vehiculo debe haberse movido del nodo inicial tras 20 ticks");
+                "El vehiculo debe haberse movido del nodo inicial tras 50 ticks");
         int[] ruta = v.getRutaActiva();
         if (ruta.length >= 2 && v.getIndiceRuta() < ruta.length - 1) {
             int desde = ruta[v.getIndiceRuta()];
@@ -146,13 +146,13 @@ class GestorSimulacionTest {
 
         int nodoAnterior = v.getNodoActual();
         boolean seMovio = false;
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 50; i++) {
             gestor.tick();
             if (v.getNodoActual() != nodoAnterior) {
                 seMovio = true;
                 break;
             }
         }
-        assertTrue(seMovio, "El vehiculo debe cambiar de nodo tras varios ticks de roaming");
+        assertTrue(seMovio, "El vehiculo debe cambiar de nodo tras 50 ticks de roaming");
     }
 }

@@ -24,7 +24,6 @@ import java.util.Random;
  * @version 2.0
  */
 public class GestorSimulacion implements MotorSimulacion {
-    private static final double PASO_INTERPOLACION = 0.33;
     private static final int USUARIOS_OBJETIVO = 5;
     private static final int VEHICULOS_MIN = 10;
     private static final int VEHICULOS_MAX = 15;
@@ -184,21 +183,33 @@ public class GestorSimulacion implements MotorSimulacion {
     }
 
     /**
-     * Avanza una posicion del vehiculo en su ruta hacia el nodo siguiente.
-     * Si la ruta esta vacia o ya llego al destino, se detiene sin avanzar.
+     * Avanza el vehiculo a lo largo de su ruta activa de forma proporcional
+     * al peso (ETA) de cada arista.
+     * <p>
+     *     El avance por tick es {@code 1.0 / pesoArista}, de modo que
+     *     una arista con ETA de N segundos requiere exactamente N ticks
+     *     en atravesarse. Si la ruta esta vacia o ya llego al destino,
+     *     se detiene sin avanzar.
+     * </p>
      * @param v Vehiculo cuyo progreso se avanza
      */
     private void avanzarProgreso(Vehiculo v) {
         int[] ruta = v.getRutaActiva();
         if (ruta.length < 2) return;
 
-        double p = v.getProgreso() + PASO_INTERPOLACION;
+        int idx = v.getIndiceRuta();
+        if (idx >= ruta.length - 1) return;
+
+        double peso = grafo.getMatrizCosto().devolver(ruta[idx], ruta[idx + 1]);
+        if (peso <= 0 || peso >= Double.POSITIVE_INFINITY) return;
+
+        double p = v.getProgreso() + 1.0 / peso;
         if (p >= 1.0) {
-            int idx = v.getIndiceRuta() + 1;
-            if (idx < ruta.length - 1) {
-                v.setNodoAnterior(ruta[idx]);
-                v.setNodoActual(ruta[idx + 1]);
-                v.setIndiceRuta(idx);
+            int siguiente = idx + 1;
+            if (siguiente < ruta.length - 1) {
+                v.setNodoAnterior(ruta[siguiente]);
+                v.setNodoActual(ruta[siguiente + 1]);
+                v.setIndiceRuta(siguiente);
                 v.setProgreso(0.0);
             } else {
                 v.setIndiceRuta(ruta.length - 1);

@@ -287,42 +287,16 @@ public class SistemaViajes {
     }
 
     public String obtenerTextoColaDespacho(Usuario usuario) {
-        int n = vehiculos.tamanio();
-        int[] indices = new int[n];
-        double[] etas = new double[n];
-        int count = 0;
-
-        for (int i = 0; i < n; i++) {
-            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
-            if (v.isDisponible()) {
-                double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
-                if (eta < INFINITO) {
-                    indices[count] = i;
-                    etas[count] = eta;
-                    count++;
-                }
-            }
-        }
-
-        if (count == 0) return "(sin candidatos)";
-
-        for (int i = 0; i < count - 1; i++) {
-            int minIdx = i;
-            for (int j = i + 1; j < count; j++) {
-                if (etas[j] < etas[minIdx]) {
-                    minIdx = j;
-                }
-            }
-            if (minIdx != i) {
-                int tmpI = indices[i]; indices[i] = indices[minIdx]; indices[minIdx] = tmpI;
-                double tmpE = etas[i]; etas[i] = etas[minIdx]; etas[minIdx] = tmpE;
-            }
-        }
+        ColaPrioridadMonticulo cola = construirColaDespacho(usuario);
+        if (cola.estaVacia()) return "(sin candidatos)";
 
         StringBuilder sb = new StringBuilder("── Cola de despacho ──\n");
-        for (int i = 0; i < count; i++) {
-            Vehiculo v = (Vehiculo) vehiculos.devolver(indices[i]);
-            sb.append(String.format("%d. %s — %.0fs\n", i + 1, v.getPatente(), etas[i]));
+        int count = 0;
+        while (!cola.estaVacia()) {
+            int idx = cola.extraerMin();
+            Vehiculo v = (Vehiculo) vehiculos.devolver(idx);
+            double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
+            sb.append(String.format("%d. %s — %.0fs\n", ++count, v.getPatente(), eta));
         }
         return sb.toString();
     }
@@ -533,21 +507,17 @@ public class SistemaViajes {
      */
     public String obtenerTextoColaOcupados() {
         reconstruirColaOcupados();
-        int n = colaOcupados.tamanio();
-        int[] indices = new int[n];
-        for (int i = 0; i < n; i++) {
-            indices[i] = colaOcupados.extraerMin();
-        }
+        ColaPrioridadMonticulo copia = new ColaPrioridadMonticulo(colaOcupados);
         StringBuilder sb = new StringBuilder("--- Cola Ocupados ---\n");
-        for (int i = 0; i < n; i++) {
-            Vehiculo v = (Vehiculo) vehiculos.devolver(indices[i]);
-            double eta = calcularRestanteETA(indices[i]);
+        while (!copia.estaVacia()) {
+            int idx = copia.extraerMin();
+            Vehiculo v = (Vehiculo) vehiculos.devolver(idx);
+            double eta = calcularRestanteETA(idx);
             double distKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
             sb.append(v.getPatente())
                     .append("  ~").append(String.format("%.0f", eta)).append("s  ")
                     .append(String.format("%.1f", distKm)).append("km\n");
         }
-        reconstruirColaOcupados();
         return sb.toString();
     }
 

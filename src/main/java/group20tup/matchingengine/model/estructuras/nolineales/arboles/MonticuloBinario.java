@@ -30,7 +30,7 @@ public class MonticuloBinario {
      * @param other Monticulo a copiar
      */
     public MonticuloBinario(MonticuloBinario other) {
-        this.capacity = other.size;
+        this.capacity = other.capacity;
         this.size = other.size;
         this.heap = new int[this.capacity];
         this.prioridades = new double[this.capacity];

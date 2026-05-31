@@ -1,5 +1,6 @@
 package group20tup.matchingengine.model.utilidades.sistema;
 
+import group20tup.matchingengine.model.estructuras.lineales.matrices.MatrizGrafo;
 import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
@@ -116,11 +117,13 @@ public class GestorSimulacion implements MotorSimulacion {
             int[] ruta = v.getRutaActiva();
 
             if (v.isDisponible() && (ruta.length == 0 || estaEnDestino(v))) {
-                int destino = rnd.nextInt(grafo.getOrden());
-                if (destino != v.getNodoActual()) {
-                    int[] nuevaRuta = ruteador.calcularRuta(v.getNodoActual(), destino);
-                    if (nuevaRuta.length >= 2) {
-                        v.setRutaActiva(nuevaRuta);
+                int vecino = obtenerVecinoAleatorio(v.getNodoActual());
+                if (vecino != -1) {
+                    v.setRutaActiva(new int[]{v.getNodoActual(), vecino});
+                } else {
+                    int nodo = rnd.nextInt(grafo.getOrden());
+                    if (nodo != v.getNodoActual()) {
+                        v.setRutaActiva(new int[]{v.getNodoActual(), nodo});
                     }
                 }
             }
@@ -139,6 +142,32 @@ public class GestorSimulacion implements MotorSimulacion {
 
         procesarArribos();
         mantenerDensidad();
+    }
+
+    /**
+     * Obtiene un vecino aleatorio alcanzable desde el nodo dado,
+     * respetando las restricciones de sentido unico del grafo dirigido.
+     * @param nodo Nodo de origen
+     * @return Indice de un nodo vecino valido, o -1 si no existe ninguna arista saliente
+     */
+    private int obtenerVecinoAleatorio(int nodo) {
+        int orden = grafo.getOrden();
+        MatrizGrafo matriz = grafo.getMatrizCosto();
+        int count = 0;
+        for (int j = 0; j < orden; j++) {
+            if (j != nodo && matriz.areConnected(nodo, j)) {
+                count++;
+            }
+        }
+        if (count == 0) return -1;
+        int target = rnd.nextInt(count);
+        for (int j = 0; j < orden; j++) {
+            if (j != nodo && matriz.areConnected(nodo, j)) {
+                if (target == 0) return j;
+                target--;
+            }
+        }
+        return -1;
     }
 
     /**

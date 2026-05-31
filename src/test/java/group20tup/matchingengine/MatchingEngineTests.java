@@ -681,4 +681,62 @@ public class MatchingEngineTests {
         assertDoesNotThrow(() -> gestor.tick());
         assertDoesNotThrow(() -> gestor.renderizarFrame());
     }
+
+    @Test
+    @DisplayName("Vehiculo disponible sin ruta recibe ruta de 2 nodos adyacentes tras tick")
+    void testRoamingVecinoAleatorio() {
+        GestorSimulacion gestor = new GestorSimulacion(sistema, null, mapaSalta, dijkstra);
+        int nodo = 500;
+        Vehiculo v = new Vehiculo("RTST", nodo);
+        sistema.registrarVehiculo(v);
+        assertEquals(0, v.getRutaActiva().length, "Ruta debe estar vacia inicialmente");
+
+        gestor.tick();
+
+        int[] ruta = v.getRutaActiva();
+        assertTrue(ruta.length >= 2, "Ruta debe tener al menos 2 nodos despues de tick");
+        assertEquals(nodo, ruta[0], "Primer nodo debe ser el nodo actual del vehiculo");
+        assertTrue(mapaSalta.getMatrizCosto().areConnected(nodo, ruta[1]),
+                "El segundo nodo debe ser un vecino adyacente alcanzable");
+    }
+
+    @Test
+    @DisplayName("Roaming multiple: vehiculo se mueve a traves de varios nodos adyacentes")
+    void testRoamingMultiplePasos() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
+        int nodo = 500;
+        Vehiculo v = new Vehiculo("RMLT", nodo);
+        s.registrarVehiculo(v);
+
+        for (int i = 0; i < 20; i++) {
+            gestor.tick();
+        }
+
+        assertTrue(v.getNodoActual() != 500 || v.getIndiceRuta() > 0,
+                "El vehiculo debe haberse movido del nodo inicial tras 20 ticks");
+        int[] ruta = v.getRutaActiva();
+        if (ruta.length >= 2 && v.getIndiceRuta() < ruta.length - 1) {
+            int desde = ruta[v.getIndiceRuta()];
+            int hasta = ruta[v.getIndiceRuta() + 1];
+            assertTrue(mapaSalta.getMatrizCosto().areConnected(desde, hasta),
+                    "Cada paso de roaming debe ser entre nodos adyacentes conectados");
+        }
+    }
+
+    @Test
+    @DisplayName("Vehiculo en nodo sin salidas usa ruta de 2 nodos a destino aleatorio")
+    void testRoamingSinSalidasUsaDestinoAleatorio() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        GestorSimulacion gestor = new GestorSimulacion(s, null, mapaSalta, dijkstra);
+        int nodo = 0;
+        Vehiculo v = new Vehiculo("SNSL", nodo);
+        s.registrarVehiculo(v);
+
+        gestor.tick();
+
+        int[] ruta = v.getRutaActiva();
+        assertTrue(ruta.length >= 2, "Incluso sin vecinos debe obtener una ruta de 2 nodos");
+        assertEquals(nodo, ruta[0], "Primer nodo debe ser el actual");
+    }
 }

@@ -163,4 +163,46 @@ class EstructurasTest {
         heap.decreaseKey(0, 10.0);
         assertEquals(0, heap.extraerMin());
     }
+
+    @Test
+    @DisplayName("MonticuloBinario: copia de monticulo vacio")
+    void testMonticuloBinarioCopiaVacia() {
+        MonticuloBinario original = new MonticuloBinario(5);
+        MonticuloBinario copia = new MonticuloBinario(original);
+        assertTrue(copia.estaVacia());
+        assertEquals(0, copia.tamanio());
+        assertEquals(-1, copia.extraerMin());
+    }
+
+    @Test
+    @DisplayName("MonticuloBinario: decreaseKey en elemento inexistente no lanza excepcion")
+    void testMonticuloDecreaseKeyNoExistente() {
+        MonticuloBinario heap = new MonticuloBinario(3);
+        heap.insertar(0, 1.0);
+        heap.insertar(1, 2.0);
+        assertDoesNotThrow(() -> heap.decreaseKey(99, 0.5));
+        assertEquals(0, heap.extraerMin());
+        assertEquals(1, heap.extraerMin());
+    }
+
+    @Test
+    @DisplayName("ColaPrioridadMonticulo: limpiar vacia la cola")
+    void testColaPrioridadLimpiar() {
+        ColaPrioridadMonticulo cola = new ColaPrioridadMonticulo(5);
+        cola.insertar(0, 3.0);
+        cola.insertar(1, 1.0);
+        cola.insertar(2, 2.0);
+        assertFalse(cola.estaVacia());
+        cola.limpiar();
+        assertTrue(cola.estaVacia());
+        assertEquals(0, cola.tamanio());
+        assertEquals(-1, cola.extraerMin());
+    }
+
+    @Test
+    @DisplayName("ListaDoubleLinkedL: eliminar en lista vacia lanza excepcion")
+    void testListaEliminarEnVacia() {
+        ListaDoubleLinkedL lista = new ListaDoubleLinkedL();
+        assertThrows(IndexOutOfBoundsException.class, () -> lista.eliminar(0));
+    }
 }

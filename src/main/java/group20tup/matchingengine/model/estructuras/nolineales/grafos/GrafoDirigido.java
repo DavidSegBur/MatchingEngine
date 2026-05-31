@@ -22,14 +22,11 @@ public class GrafoDirigido extends AbsGrafo{
 
     /**
      * {@inheritDoc}
-     * @deprecated Metodo interactivo solo para propositos academicos.
-     *             En produccion utilizar {@code GrafoMapa} que se auto-carga
-     *             desde los archivos CSV.
+     * @throws UnsupportedOperationException siempre — usar {@code GrafoMapa} para carga desde CSV
      */
     @Override
-    @Deprecated
     public void cargarGrafo() {
-        // No operation - this implementation is deprecated.
-        // Use GrafoMapa.cargarGrafo() for CSV-based loading.
+        throw new UnsupportedOperationException(
+                "GrafoDirigido no soporta carga. Use GrafoMapa.cargarGrafo() para datos CSV.");
     }
 }

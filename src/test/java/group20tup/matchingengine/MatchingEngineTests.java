@@ -477,4 +477,160 @@ public class MatchingEngineTests {
         assertNotNull(v, "Con 3 disponibles al menos uno debe aceptar");
         assertEquals(EstadoVehiculo.APROXIMANDO, v.getEstado());
     }
+
+    @Test
+    @DisplayName("obtenerTextoColaDespacho retorna cola formateada con patentes y ETAs")
+    void testObtenerTextoColaDespachoConVehiculos() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("TEST_A", 0));
+        s.registrarVehiculo(new Vehiculo("TEST_B", 100));
+        Usuario u = new Usuario(10, 47);
+        s.agregarUsuario(u);
+
+        String texto = s.obtenerTextoColaDespacho(u);
+        assertTrue(texto.contains("── Cola de despacho ──"), "Debe contener el header");
+        assertTrue(texto.contains("TEST_A"), "Debe incluir la patente TEST_A");
+        assertTrue(texto.contains("TEST_B"), "Debe incluir la patente TEST_B");
+        assertTrue(texto.contains("s"), "Debe mostrar la unidad de segundos");
+        assertTrue(texto.contains("1."), "Debe numerar los candidatos");
+    }
+
+    @Test
+    @DisplayName("obtenerTextoColaDespacho retorna sin candidatos si no hay vehiculos")
+    void testObtenerTextoColaDespachoSinCandidatos() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        Usuario u = new Usuario(20, 47);
+        s.agregarUsuario(u);
+
+        assertEquals("(sin candidatos)", s.obtenerTextoColaDespacho(u));
+    }
+
+    @Test
+    @DisplayName("obtenerTextoColaDespacho excluye vehiculos ocupados")
+    void testObtenerTextoColaDespachoExcluyeOcupados() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("DISP", 0));
+        Vehiculo ocupado = new Vehiculo("OCUP", 100);
+        ocupado.setEstado(EstadoVehiculo.EN_VIAJE);
+        s.registrarVehiculo(ocupado);
+        Usuario u = new Usuario(30, 47);
+        s.agregarUsuario(u);
+
+        String texto = s.obtenerTextoColaDespacho(u);
+        assertTrue(texto.contains("DISP"), "Debe incluir el vehiculo disponible");
+        assertFalse(texto.contains("OCUP"), "No debe incluir el vehiculo ocupado");
+    }
+
+    @Test
+    @DisplayName("iniciarDespacho y procesarSiguienteDespacho completan el ciclo sin rechazo")
+    void testIniciarYProcesarDespachoSinRechazo() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("V01", 0));
+        s.registrarVehiculo(new Vehiculo("V02", 100));
+        Usuario u = new Usuario(40, 47);
+        s.agregarUsuario(u);
+
+        s.iniciarDespacho(u, null);
+        assertTrue(s.hayDespachoActivo(), "Despacho debe estar activo tras iniciar");
+        assertEquals(0, s.getCandidatosProcesadosDespacho(), "Aun sin procesar");
+        assertTrue(s.getTotalCandidatosDespacho() > 0, "Debe haber candidatos");
+
+        Vehiculo aceptado = s.procesarSiguienteDespacho();
+        assertNotNull(aceptado, "Sin rechazo debe aceptar el primer candidato");
+        assertFalse(s.hayDespachoActivo(), "Despacho debe finalizar tras aceptar");
+        assertEquals(EstadoVehiculo.APROXIMANDO, aceptado.getEstado());
+        assertNotNull(aceptado.getPasajeroAbordo());
+        assertEquals(u.getId(), aceptado.getPasajeroAbordo().getId());
+    }
+
+    @Test
+    @DisplayName("procesarSiguienteDespacho con rechazo simulado usando Random seed")
+    void testProcesarDespachoConRechazoSeed() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("V01", 0));
+        s.registrarVehiculo(new Vehiculo("V02", 100));
+        s.registrarVehiculo(new Vehiculo("V03", 200));
+        Usuario u = new Usuario(50, 47);
+        s.agregarUsuario(u);
+
+        s.iniciarDespacho(u, new Random(42));
+        assertTrue(s.hayDespachoActivo());
+        assertEquals(3, s.getTotalCandidatosDespacho());
+
+        Vehiculo aceptado = null;
+        while (s.hayDespachoActivo()) {
+            aceptado = s.procesarSiguienteDespacho();
+        }
+
+        assertNotNull(aceptado, "Con 3 candidatos al menos uno debe aceptar");
+        assertEquals(EstadoVehiculo.APROXIMANDO, aceptado.getEstado());
+        assertTrue(s.getCandidatosProcesadosDespacho() >= 1, "Debe haber procesado al menos un candidato");
+    }
+
+    @Test
+    @DisplayName("procesarSiguienteDespacho retorna null si la cola esta vacia")
+    void testProcesarDespachoColaVacia() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        Vehiculo ocupado = new Vehiculo("OCUP", 0);
+        ocupado.setEstado(EstadoVehiculo.EN_VIAJE);
+        s.registrarVehiculo(ocupado);
+        Usuario u = new Usuario(60, 47);
+        s.agregarUsuario(u);
+
+        s.iniciarDespacho(u, null);
+        assertEquals(0, s.getTotalCandidatosDespacho(), "No debe haber candidatos");
+        assertTrue(s.hayDespachoActivo(), "Despacho inicia aunque este vacio");
+
+        assertNull(s.procesarSiguienteDespacho(), "Debe retornar null con cola vacia");
+        assertFalse(s.hayDespachoActivo(), "Despacho debe finalizar");
+    }
+
+    @Test
+    @DisplayName("cancelarDespacho resetea el estado del despacho")
+    void testCancelarDespacho() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("V01", 0));
+        Usuario u = new Usuario(70, 47);
+        s.agregarUsuario(u);
+
+        s.iniciarDespacho(u, null);
+        assertTrue(s.hayDespachoActivo());
+
+        s.cancelarDespacho();
+        assertFalse(s.hayDespachoActivo(), "Cancelar debe desactivar el despacho");
+        assertNull(s.procesarSiguienteDespacho(), "Tras cancelar no debe procesar");
+
+        s.iniciarDespacho(u, null);
+        assertTrue(s.hayDespachoActivo(), "Debe poder iniciar un nuevo despacho tras cancelar");
+        assertNotNull(s.procesarSiguienteDespacho(), "El nuevo despacho debe procesarse correctamente");
+    }
+
+    @Test
+    @DisplayName("procesarSiguienteDespacho setea destacadoHasta en el vehiculo")
+    void testDestacadoHastaEnVehiculo() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("V01", 0));
+        Usuario u = new Usuario(80, 47);
+        s.agregarUsuario(u);
+
+        s.iniciarDespacho(u, null);
+        Vehiculo v = s.procesarSiguienteDespacho();
+        assertNotNull(v);
+        assertTrue(v.getDestacadoHasta() > 0, "destacadoHasta debe ser > 0 tras pop");
+        assertTrue(v.getDestacadoHasta() > System.nanoTime(), "Debe estar en el futuro");
+    }
+
+    @Test
+    @DisplayName("iniciarDespacho registra la solicitud en estadisticas")
+    void testIniciarDespachoRegistraSolicitud() {
+        SistemaViajes s = new SistemaViajes(mapaSalta, dijkstra);
+        s.registrarVehiculo(new Vehiculo("V01", 0));
+        Usuario u = new Usuario(90, 47);
+        s.agregarUsuario(u);
+
+        long antes = s.getEstadisticas().getViajesSolicitados();
+        s.iniciarDespacho(u, null);
+        assertEquals(antes + 1, s.getEstadisticas().getViajesSolicitados(),
+                "iniciarDespacho debe incrementar el contador de solicitudes");
+    }
 }

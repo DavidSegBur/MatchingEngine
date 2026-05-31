@@ -24,6 +24,7 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Slider;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
@@ -62,6 +63,12 @@ public class DashboardController {
     private Label lblFloydStatus;
     @FXML
     private Button btnResetView;
+    @FXML
+    private Button btnPausar;
+    @FXML
+    private Slider sliderVelocidad;
+    @FXML
+    private Label lblVelocidad;
 
     private GrafoMapa grafoMapa;
     private ProyeccionMapa proyeccion;
@@ -164,6 +171,35 @@ public class DashboardController {
      * @param usuario Usuario que solicita el viaje
      */
     private void solicitarViajeUI(Usuario usuario) {
+        // If a vehicle is already approaching this user, show info instead of re-dispatching
+        for (int i = 0; i < sistema.totalVehiculos(); i++) {
+            Vehiculo v = sistema.getVehiculo(i);
+            if (v.getEstado() == EstadoVehiculo.APROXIMANDO
+                    && v.getPasajeroAbordo() != null
+                    && v.getPasajeroAbordo().equals(usuario)) {
+                double eta = sistema.calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
+                double distKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
+                double tarifa = sistema.calcularTarifa(eta);
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Viaje en curso");
+                alert.setHeaderText("Un vehiculo ya se dirige hacia el usuario");
+                alert.setContentText(String.format(
+                        "Vehiculo: %s\nETA: %.0f s\nDistancia: %.2f km\nTarifa: $%.2f",
+                        v.getPatente(), eta, distKm, tarifa));
+                alert.show();
+                mostrarInfoVehiculo(v);
+                return;
+            }
+        }
+
+        // If dispatch is already running for this user, show progress and leave it running
+        if (sistema.hayDespachoActivo() && usuario.equals(this.usuarioDespachando)) {
+            lblInfo.setText("Buscando conductor...\n("
+                    + sistema.getCandidatosProcesadosDespacho() + "/"
+                    + sistema.getTotalCandidatosDespacho() + ")");
+            return;
+        }
+
         if (pausaDespacho != null) {
             pausaDespacho.stop();
         }
@@ -533,7 +569,21 @@ public class DashboardController {
         renderizadorMapa.redibujar();
         gestor.inicializarEntidades();
         adaptadorSimulacion = new SimulacionFXAdapter(gestor);
+        configurarControlesSimulacion();
         adaptadorSimulacion.iniciar();
+    }
+
+    private void configurarControlesSimulacion() {
+        btnPausar.setOnAction(e -> {
+            boolean pausado = adaptadorSimulacion.togglePausa();
+            btnPausar.setText(pausado ? "\u25B6 Reanudar" : "\u23F8 Pausar");
+        });
+
+        sliderVelocidad.valueProperty().addListener((obs, old, val) -> {
+            double v = val.doubleValue();
+            adaptadorSimulacion.setVelocidad(v);
+            lblVelocidad.setText(String.format("%.1f\u00D7", v));
+        });
     }
 
     private javafx.beans.value.ChangeListener<Number> crearWidthListener() {

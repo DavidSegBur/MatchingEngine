@@ -74,10 +74,23 @@
     -fx-max-height: 16;
 }
 
-/* ── Button ──────────────────────────────── */
-#btnResetView {
+/* ── Buttons ─────────────────────────────── */
+#btnResetView, #btnPausar {
     -fx-max-width: 99999;
     -fx-padding: 4 8;
+}
+
+/* ── Speed Slider ────────────────────────── */
+#sliderVelocidad {
+    -fx-max-width: 99999;
+}
+
+.speed-label {
+    -fx-font-size: 13;
+    -fx-font-weight: bold;
+    -fx-font-family: monospace;
+    -fx-alignment: center-right;
+    -fx-min-width: 50;
 }
 
 /* ── ScrollPane ──────────────────────────── */

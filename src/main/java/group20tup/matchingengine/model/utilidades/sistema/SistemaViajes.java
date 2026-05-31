@@ -507,15 +507,32 @@ public class SistemaViajes {
      */
     public String obtenerTextoColaOcupados() {
         reconstruirColaOcupados();
-        ColaPrioridadMonticulo copia = new ColaPrioridadMonticulo(colaOcupados);
+        int n = colaOcupados.tamanio();
+        int[] indices = new int[n];
+        double[] etas = new double[n];
+        int count = 0;
+        for (int i = 0; i < vehiculos.tamanio(); i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
+            if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
+                indices[count] = i;
+                etas[count] = calcularRestanteETA(i);
+                count++;
+            }
+        }
+        for (int i = 0; i < count - 1; i++) {
+            for (int j = i + 1; j < count; j++) {
+                if (etas[j] < etas[i]) {
+                    double tmpE = etas[i]; etas[i] = etas[j]; etas[j] = tmpE;
+                    int tmpI = indices[i]; indices[i] = indices[j]; indices[j] = tmpI;
+                }
+            }
+        }
         StringBuilder sb = new StringBuilder("--- Cola Ocupados ---\n");
-        while (!copia.estaVacia()) {
-            int idx = copia.extraerMin();
-            Vehiculo v = (Vehiculo) vehiculos.devolver(idx);
-            double eta = calcularRestanteETA(idx);
-            double distKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
+        for (int k = 0; k < count; k++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(indices[k]);
+            double distKm = etas[k] * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
             sb.append(v.getPatente())
-                    .append("  ~").append(String.format("%.0f", eta)).append("s  ")
+                    .append("  ~").append(String.format("%.0f", etas[k])).append("s  ")
                     .append(String.format("%.1f", distKm)).append("km\n");
         }
         return sb.toString();

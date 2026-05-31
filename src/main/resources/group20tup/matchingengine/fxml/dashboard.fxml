@@ -5,7 +5,9 @@
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -28,6 +30,13 @@
             <ProgressIndicator fx:id="floydProgress" visible="false" />
             <Label fx:id="lblFloydStatus" wrapText="true" styleClass="floyd-status" />
             <Button fx:id="btnResetView" text="Reset View" />
+            <Label text="Simulacion" styleClass="section-title" />
+            <HBox spacing="6">
+                <Button fx:id="btnPausar" text="⏸ Pausar" HBox.hgrow="ALWAYS" maxWidth="99999" />
+                <Label fx:id="lblVelocidad" text="1.0×" styleClass="speed-label" />
+            </HBox>
+            <Slider fx:id="sliderVelocidad" min="1.0" max="100" value="1.0"
+                    showTickLabels="false" showTickMarks="false" />
         </VBox>
     </right>
 </BorderPane>

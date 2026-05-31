@@ -139,4 +139,28 @@ class EstructurasTest {
         assertEquals(2, cola.extraerMin());
         assertTrue(cola.estaVacia());
     }
+
+    @Test
+    @DisplayName("ColaPrioridadMonticulo: copia superficial es independiente")
+    void testColaPrioridadMonticuloCopia() {
+        ColaPrioridadMonticulo original = new ColaPrioridadMonticulo(4);
+        original.insertar(5, 3.0);
+        original.insertar(3, 1.0);
+
+        ColaPrioridadMonticulo copia = new ColaPrioridadMonticulo(original);
+        assertEquals(3, copia.extraerMin());
+        assertEquals(5, copia.extraerMin());
+        assertTrue(copia.estaVacia());
+
+        assertEquals(2, original.tamanio(), "Original no debe ser afectado por la copia");
+    }
+
+    @Test
+    @DisplayName("MonticuloBinario: decreaseKey no altera estructura para prioridad mayor")
+    void testMonticuloDecreaseKeyMayor() {
+        MonticuloBinario heap = new MonticuloBinario(3);
+        heap.insertar(0, 5.0);
+        heap.decreaseKey(0, 10.0);
+        assertEquals(0, heap.extraerMin());
+    }
 }

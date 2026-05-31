@@ -62,6 +62,15 @@ class RutasFloydWarshallTest {
     }
 
     @Test
+    @DisplayName("Grafo de un solo nodo retorna [0]")
+    void testFloydWarshallNodoUnico() {
+        GrafoDirigido grafo = grafoSintetico(1);
+        FloydWarshallRutas floyd = new FloydWarshallRutas(grafo);
+        int[] ruta = floyd.calcularRuta(0, 0);
+        assertArrayEquals(new int[]{0}, ruta);
+    }
+
+    @Test
     @DisplayName("Reconstruccion de camino tiene nodos intermedios correctos")
     void testFloydPathReconstruction() {
         GrafoDirigido grafo = grafoSintetico(5);

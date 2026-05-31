@@ -1,10 +1,8 @@
 package group20tup.matchingengine;
 
 import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoDirigido;
-import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
 import group20tup.matchingengine.model.utilidades.calculadorescaminos.DijkstraRutas;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -12,35 +10,41 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RutasDijkstraTest {
 
-    private static GrafoMapa mapaSalta;
-    private static DijkstraRutas dijkstra;
-
-    @BeforeAll
-    static void init() {
-        mapaSalta = new GrafoMapa();
-        mapaSalta.cargarGrafo();
-        dijkstra = new DijkstraRutas(mapaSalta);
+    private static GrafoDirigido grafoLineal(int n) {
+        GrafoDirigido g = new GrafoDirigido(n);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                g.getMatrizCosto().actualizar(Double.POSITIVE_INFINITY, i, j);
+            }
+            g.getMatrizCosto().actualizar(0.0, i, i);
+        }
+        for (int i = 0; i < n - 1; i++) {
+            g.getMatrizCosto().actualizar((double) i + 1, i, i + 1);
+        }
+        return g;
     }
 
     @Test
-    @DisplayName("Encuentra camino entre nodos conectados")
+    @DisplayName("Encuentra camino multi-salto en grafo lineal de 5 nodos")
     void testDijkstraRutaEncuentraCamino() {
-        int[] ruta = dijkstra.calcularRuta(0, 47);
+        GrafoDirigido grafo = grafoLineal(5);
+        DijkstraRutas d = new DijkstraRutas(grafo);
+        int[] ruta = d.calcularRuta(0, 4);
 
         assertNotNull(ruta);
-        assertTrue(ruta.length > 0, "Debe existir una ruta entre los nodos 0 y 47");
-        assertEquals(0, ruta[0], "La ruta debe iniciar en el nodo 0");
-        assertEquals(47, ruta[ruta.length - 1], "La ruta debe terminar en el nodo 47");
+        assertArrayEquals(new int[]{0, 1, 2, 3, 4}, ruta);
     }
 
     @Test
     @DisplayName("Mismo origen y destino retorna [origen]")
     void testDijkstraMismoOrigenYDestino() {
-        int[] ruta = dijkstra.calcularRuta(0, 0);
+        GrafoDirigido grafo = grafoLineal(3);
+        DijkstraRutas d = new DijkstraRutas(grafo);
+        int[] ruta = d.calcularRuta(1, 1);
 
         assertNotNull(ruta);
         assertEquals(1, ruta.length);
-        assertEquals(0, ruta[0]);
+        assertEquals(1, ruta[0]);
     }
 
     @Test

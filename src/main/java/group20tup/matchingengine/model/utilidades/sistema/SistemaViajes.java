@@ -142,7 +142,7 @@ public class SistemaViajes {
 
     /**
      * Devuelve la cola de prioridad de vehiculos ocupados.
-     * @return ColaPrioridadMonticulo con vehiculos en estado EN_VIAJE
+     * @return ColaPrioridadMonticulo con vehiculos en estado APROXIMANDO o EN_VIAJE
      */
     public ColaPrioridadMonticulo getColaOcupados() {
         return new ColaPrioridadMonticulo(colaOcupados);
@@ -468,14 +468,7 @@ public class SistemaViajes {
             vehiculo.setEstado(EstadoVehiculo.EN_VIAJE);
             vehiculo.setRutaActiva(ruta);
 
-            double eta = 0;
-            for (int i = 0; i < ruta.length - 1; i++) {
-                eta += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
-            }
-            int idx = buscarIndiceVehiculo(vehiculo);
-            if (idx != -1) {
-                colaOcupados.insertar(idx, eta);
-            }
+            reconstruirColaOcupados();
             return true;
         } else {
             vehiculo.setEstado(EstadoVehiculo.DISPONIBLE);
@@ -522,7 +515,7 @@ public class SistemaViajes {
         colaOcupados.limpiar();
         for (int i = 0; i < vehiculos.tamanio(); i++) {
             Vehiculo v = (Vehiculo) vehiculos.devolver(i);
-            if (v.getEstado() == EstadoVehiculo.EN_VIAJE) {
+            if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
                 double eta = 0;
                 int[] ruta = v.getRutaActiva();
                 for (int j = v.getIndiceRuta(); j < ruta.length - 1; j++) {
@@ -606,6 +599,15 @@ public class SistemaViajes {
             return false;
         }
         vehiculo.setRutaActiva(ruta);
+
+        int idx = buscarIndiceVehiculo(vehiculo);
+        if (idx != -1) {
+            double eta = 0;
+            for (int i = 0; i < ruta.length - 1; i++) {
+                eta += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
+            }
+            colaOcupados.insertar(idx, eta);
+        }
         return true;
     }
 }

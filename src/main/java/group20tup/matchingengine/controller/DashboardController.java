@@ -227,7 +227,7 @@ public class DashboardController {
             alert.setContentText(String.format(
                     "Vehiculo: %s\nETA: %.0f segundos\nDistancia: %.2f km\nTarifa: $%.2f",
                     aceptado.getPatente(), eta, distanciaKm, tarifa));
-            alert.showAndWait();
+            alert.show();
 
             lblInfo.setText(String.format(
                     "Viaje asignado\nVehiculo: %s\nETA: %.0f s\nDist: %.2f km\nTarifa: $%.2f",
@@ -341,7 +341,7 @@ public class DashboardController {
                 alert.setTitle("Precomputando");
                 alert.setHeaderText("Floyd-Warshall se esta precomputando");
                 alert.setContentText("Espere a que termine el calculo inicial...");
-                alert.showAndWait();
+            alert.show();
             }
         } else {
             sistema.setRuteador(dijkstraRuteador);

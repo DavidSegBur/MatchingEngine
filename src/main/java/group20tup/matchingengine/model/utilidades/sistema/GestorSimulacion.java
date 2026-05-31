@@ -135,7 +135,7 @@ public class GestorSimulacion implements MotorSimulacion {
 
             avanzarProgreso(v);
 
-            if (v.getEstado() == EstadoVehiculo.EN_VIAJE) {
+            if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
                 double etaRestante = 0;
                 int[] rutaV = v.getRutaActiva();
                 for (int j = v.getIndiceRuta(); j < rutaV.length - 1; j++) {
@@ -221,7 +221,7 @@ public class GestorSimulacion implements MotorSimulacion {
      * </p>
      */
     private void procesarArribos() {
-        for (int i = 0; i < sistema.totalVehiculos(); i++) {
+        for (int i = sistema.totalVehiculos() - 1; i >= 0; i--) {
             Vehiculo v = sistema.getVehiculo(i);
             int[] ruta = v.getRutaActiva();
             if (ruta.length == 0) continue;
@@ -230,6 +230,7 @@ public class GestorSimulacion implements MotorSimulacion {
                 if (v.getEstado() == EstadoVehiculo.APROXIMANDO) {
                     if (!sistema.realizarPickup(v)) {
                         sistema.removerVehiculo(v);
+                        sistema.reconstruirColaOcupados();
                         System.out.println("[Pickup] Vehiculo " + v.getPatente()
                                 + " no encontro destino alcanzable. Reemplazado.");
                     } else {

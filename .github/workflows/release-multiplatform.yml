@@ -57,40 +57,42 @@ jobs:
     - name: Prepare artifact
       shell: bash
       run: |
-        echo "=== Verificando estructura generada por jpackage ==="
-        ls -R target/installer/ 2>/dev/null || ls -R target/ 2>/dev/null | head -n 30
+        echo "=== Estructura detectada en target/ ==="
+        ls -la target/ 2>/dev/null || echo "target/ no existe"
+        ls -la target/installer/ 2>/dev/null || echo "target/installer/ no existe"
 
-        # Buscamos de forma robusta la raíz de la aplicación compilada (directorio o archivo)
-        # Si jpackage generó un instalador directo o una carpeta portable, lo capturamos.
-        INSTALLER_PATH=$(find target/installer target -maxdepth 3 -name "MatchingEngine" -o -name "MatchingEngine.app" -o -name "*.exe" -o -name "*.msi" 2>/dev/null | head -n 1)
+        # Definimos la ruta base donde el plugin deposita la salida de jpackage
+        OUTPUT_DIR="target/installer"
 
-        # Si por alguna razón la búsqueda específica falla, usamos la carpeta base del instalador
-        if [ -z "$INSTALLER_PATH" ]; then
-          if [ -d "target/installer" ]; then
-            INSTALLER_PATH="target/installer"
+        # Si por alguna razón la carpeta target/installer no existe, buscamos dónde está la app
+        if [ ! -d "$OUTPUT_DIR" ]; then
+          echo "Advertencia: $OUTPUT_DIR no existe. Buscando directorio alternativo..."
+          DETECTED=$(find target -maxdepth 3 -type d -name "MatchingEngine" -o -name "MatchingEngine.app" 2>/dev/null | head -n 1)
+          if [ -n "$DETECTED" ]; then
+            OUTPUT_DIR="$DETECTED"
           else
-            echo "ERROR: No se encontró la salida de jpackage en target/"
+            echo "ERROR: No se encontró ninguna salida válida de jpackage en target/"
             exit 1
           fi
         fi
 
-        echo "Elemento a empaquetar encontrado en: $INSTALLER_PATH"
+        echo "Elemento listo para empaquetar encontrado en: $OUTPUT_DIR"
 
-        # Comprimimos según la plataforma utilizando el nombre exacto definido en la matriz
+        # Comprimimos el contenido real del directorio según el sistema operativo
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          # Usamos 7z para crear un archivo .zip limpio en Windows
-          7z a "${{ matrix.artifact-name }}" "./$INSTALLER_PATH"
+          # Windows: Creamos un archivo ZIP usando 7z apuntando al directorio
+          7z a "${{ matrix.artifact-name }}" "./$OUTPUT_DIR"
         else
-          # Usamos tar para Linux y Mac para preservar los permisos de ejecución del binario
-          tar -czf "${{ matrix.artifact-name }}" "./$INSTALLER_PATH"
+          # Linux y Mac: Usamos TAR para preservar intactos los permisos de ejecución nativos (chmod +x internos)
+          tar -czf "${{ matrix.artifact-name }}" "./$OUTPUT_DIR"
         fi
 
-        # Validación final de existencia del comprimido
+        # Validación de seguridad
         if [ ! -f "${{ matrix.artifact-name }}" ]; then
-          echo "ERROR: Falló la creación del artefacto comprimido: ${{ matrix.artifact-name }}"
+          echo "ERROR: No se pudo generar el archivo comprimido final: ${{ matrix.artifact-name }}"
           exit 1
         fi
-        echo "¡Artefacto creado con éxito!: ${{ matrix.artifact-name }}"
+        echo "¡Éxito! Artefacto empaquetado correctamente: ${{ matrix.artifact-name }}"
 
     - name: Upload to GitHub Release
       uses: softprops/action-gh-release@v2

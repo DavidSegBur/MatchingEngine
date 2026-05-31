@@ -14,7 +14,9 @@ import group20tup.matchingengine.model.estructuras.lineales.matrices.MatrizGrafo
  * @version 2.0
  */
 public abstract class AbsGrafo {
+    /** Matriz de costos que almacena los pesos de las aristas del grafo. */
     protected MatrizGrafo matrizCosto;
+    /** Cantidad total de nodos (orden) del grafo. */
     protected int ordenGrafo;
 
     /**

@@ -13,8 +13,12 @@ package group20tup.matchingengine.model.estructuras.lineales.matrices;
  * @version 1.1
  */
 public class MatrizArr {
+    /** Arreglo bidimensional que almacena los valores de la matriz. */
     protected double[][] matriz;
-    protected int nroFilas, nroColumnas;
+    /** Cantidad de filas de la matriz. */
+    protected int nroFilas;
+    /** Cantidad de columnas de la matriz. */
+    protected int nroColumnas;
 
     /**
      * Constructor

@@ -14,7 +14,11 @@ import group20tup.matchingengine.model.recursos.operaciones.OperacionesCL2;
  * @version 1.1
  */
 public abstract class Lista0DLinkedL implements OperacionesCL2 {
-    protected NodoDoble frenteL, finalL;
+    /** Referencia al primer nodo de la lista. */
+    protected NodoDoble frenteL;
+    /** Referencia al ultimo nodo de la lista. */
+    protected NodoDoble finalL;
+    /** Indice del ultimo elemento de la lista (-1 si esta vacia). */
     protected int ultimo;
 
     /**

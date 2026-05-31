@@ -286,6 +286,17 @@ public class SistemaViajes {
         return cola;
     }
 
+    /**
+     * Genera el texto formateado de la cola de despacho para la UI.
+     * <p>
+     *     Construye la cola de candidatos ordenados por ETA ascendente y
+     *     genera un listado numerado con patente y tiempo estimado de cada
+     *     vehiculo disponible.
+     * </p>
+     * @param usuario Usuario solicitante del viaje
+     * @return Texto con el listado de vehiculos candidatos ordenados,
+     *         o "(sin candidatos)" si no hay vehiculos disponibles
+     */
     public String obtenerTextoColaDespacho(Usuario usuario) {
         ColaPrioridadMonticulo cola = construirColaDespacho(usuario);
         if (cola.estaVacia()) return "(sin candidatos)";

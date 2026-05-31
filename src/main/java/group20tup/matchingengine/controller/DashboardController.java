@@ -386,6 +386,18 @@ public class DashboardController {
         }
     }
 
+    /**
+     * Inicializa el controlador del panel principal.
+     * <p>
+     *     Configura todos los componentes de la interfaz: carga el grafo
+     *     desde los archivos CSV en segundo plano, inicializa la proyeccion
+     *     del mapa, el canvas de renderizado, la simulacion con sus
+     *     entidades (vehiculos y usuarios), los controles de simulacion
+     *     (pausa, velocidad) y los manejadores de eventos del canvas
+     *     (click, arrastre, scroll). Este metodo es invocado
+     *     automaticamente por JavaFX tras cargar el FXML.
+     * </p>
+     */
     @FXML
     public void initialize() {
         ProgressIndicator loader = mostrarLoader();

@@ -25,6 +25,10 @@ public class GrafoMapa extends GrafoDirigido {
             "/group20tup/matchingengine/data/meta_datos_nodos_2k.csv";
     private static final String RUTA_MATRIZ =
             "/group20tup/matchingengine/data/matriz_nodos_2k.csv";
+    /**
+     * Velocidad promedio de desplazamiento en metros por segundo.
+     * Equivale a 25 km/h convertido a m/s (25 / 3.6).
+     */
     public static final double VELOCIDAD_PROMEDIO_M_S = 25.0 / 3.6;
 
     private ListaDoubleLinkedL listaEsquinas;

@@ -57,17 +57,25 @@ jobs:
     - name: Prepare artifact
       shell: bash
       run: |
-        # Buscamos de forma recursiva la carpeta "MatchingEngine" dentro de target/
-        TARGET_DIR=$(find target -type d -name "MatchingEngine" | head -n 1)
+        # List contents of target directory for debugging
+        echo "Contents of target directory:"
+        find target -type d -name "*MatchingEngine*" -o -type d -name "installer" | head -20
+        ls -la target/ || echo "target directory does not exist"
+        
+        # Search for the MatchingEngine directory
+        TARGET_DIR=$(find target -type d -name "MatchingEngine" 2>/dev/null | head -n 1)
         
         if [ -z "$TARGET_DIR" ]; then
-          TARGET_DIR="target/installer/MatchingEngine"
+          echo "ERROR: MatchingEngine directory not found in target/"
+          exit 1
         fi
         
+        echo "Found target directory: $TARGET_DIR"
+        
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          7z a ${{ matrix.artifact-name }} ./${TARGET_DIR}
+          7z a ${{ matrix.artifact-name }} "$TARGET_DIR"
         else
-          tar -czf ${{ matrix.artifact-name }} ./${TARGET_DIR}
+          tar -czf ${{ matrix.artifact-name }} -C "$(dirname "$TARGET_DIR")" "$(basename "$TARGET_DIR")"
         fi
 
     - name: Upload to GitHub Release

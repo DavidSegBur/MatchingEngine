@@ -121,7 +121,12 @@ public class GestorSimulacion implements MotorSimulacion {
                 if (vecino != -1) {
                     v.setRutaActiva(new int[]{v.getNodoActual(), vecino});
                 } else {
-                    int nodo = rnd.nextInt(grafo.getOrden());
+                    int nodo;
+                    int intentos = 0;
+                    do {
+                        nodo = rnd.nextInt(grafo.getOrden());
+                        intentos++;
+                    } while (nodo == v.getNodoActual() && intentos < 10);
                     if (nodo != v.getNodoActual()) {
                         v.setRutaActiva(new int[]{v.getNodoActual(), nodo});
                     }

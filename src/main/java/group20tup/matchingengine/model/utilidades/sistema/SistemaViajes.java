@@ -250,7 +250,10 @@ public class SistemaViajes {
             return null;
         }
 
-        aceptarViaje(candidato, usuarioDespachando);
+        boolean aceptado = aceptarViaje(candidato, usuarioDespachando);
+        if (!aceptado) {
+            return null;
+        }
         despachoEnCurso = false;
         return candidato;
     }
@@ -372,7 +375,9 @@ public class SistemaViajes {
                     estadisticas.registrarViajeRechazado();
                     continue;
                 }
-                aceptarViaje(candidato, usuario);
+                if (!aceptarViaje(candidato, usuario)) {
+                    continue;
+                }
                 return candidato;
             }
         }
@@ -560,12 +565,19 @@ public class SistemaViajes {
      * Acepta un viaje: asigna el pasajero, calcula la ruta y cambia el estado del vehiculo.
      * @param vehiculo Vehiculo que acepta el viaje
      * @param usuario Usuario a recoger
+     * @return true si el viaje fue aceptado, false si no hay ruta (el vehiculo vuelve a DISPONIBLE)
      */
-    private void aceptarViaje(Vehiculo vehiculo, Usuario usuario) {
+    private boolean aceptarViaje(Vehiculo vehiculo, Usuario usuario) {
         vehiculo.setEstado(EstadoVehiculo.APROXIMANDO);
         vehiculo.setPasajeroAbordo(usuario);
 
         int[] ruta = ruteador.calcularRuta(vehiculo.getNodoActual(), usuario.getNodoOrigen());
+        if (ruta.length == 0) {
+            vehiculo.setEstado(EstadoVehiculo.DISPONIBLE);
+            vehiculo.setPasajeroAbordo(null);
+            return false;
+        }
         vehiculo.setRutaActiva(ruta);
+        return true;
     }
 }

@@ -72,21 +72,21 @@ public class FloydWarshallRutas implements CalculadorRutas {
             return new int[0]; // No path
         }
         
-        // First, compute path length
+        int n = siguiente.length;
+        int[] temp = new int[n];
         int length = 0;
-        for (int v = origen; v != destino; v = siguiente[v][destino]) {
-            length++;
+        int v = origen;
+        for (int iter = 0; v != destino && iter < n; iter++) {
+            temp[length++] = v;
+            v = siguiente[v][destino];
         }
-        length++; // Include destination
+        if (v != destino) {
+            return new int[0]; // Cycle or corrupted siguiente matrix
+        }
+        temp[length++] = destino;
         
-        // Build path
         int[] path = new int[length];
-        int pos = 0;
-        for (int v = origen; v != destino; v = siguiente[v][destino]) {
-            path[pos++] = v;
-        }
-        path[pos] = destino;
-        
+        System.arraycopy(temp, 0, path, 0, length);
         return path;
     }
 }

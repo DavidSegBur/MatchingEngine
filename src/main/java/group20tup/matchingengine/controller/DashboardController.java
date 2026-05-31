@@ -218,7 +218,7 @@ public class DashboardController {
         if (aceptado != null) {
             lblColaDespacho.setText("");
             double eta = sistema.calcularETA(aceptado.getNodoActual(), usuarioDespachando.getNodoOrigen());
-            double distanciaKm = eta * (25.0 / 3.6) / 1000.0;
+            double distanciaKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
             double tarifa = sistema.calcularTarifa(eta);
 
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -279,35 +279,11 @@ public class DashboardController {
                     v.getPatente(), v.getNodoActual(), nodo.getNombreEsquina()));
             lblBusyQueue.setText("");
         } else {
-            sistema.reconstruirColaOcupados();
-
-            int count = sistema.getColaOcupados().tamanio();
-            int[] sortedIdx = new int[count];
-            for (int i = 0; i < count; i++) {
-                sortedIdx[i] = sistema.getColaOcupados().extraerMin();
-            }
-
-            sistema.reconstruirColaOcupados();
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("--- Cola Ocupados ---\n");
-            for (int i = 0; i < count; i++) {
-                Vehiculo ocupado = sistema.getVehiculo(sortedIdx[i]);
-                double eta = 0;
-                int[] ruta = ocupado.getRutaActiva();
-                for (int j = ocupado.getIndiceRuta(); j < ruta.length - 1; j++) {
-                    eta += grafoMapa.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
-                }
-                double distKm = eta * (25.0 / 3.6) / 1000.0;
-                sb.append(ocupado.getPatente())
-                        .append("  ~").append(String.format("%.0f", eta)).append("s  ")
-                        .append(String.format("%.1f", distKm)).append("km\n");
-            }
-
-            lblInfo.setText(String.format(
+            String infoVehiculo = String.format(
                     "Vehiculo: %s\nEstado: %s\nPosicion: nodo %d\nUbicacion: %s",
-                    v.getPatente(), v.getEstado(), v.getNodoActual(), nodo.getNombreEsquina()));
-            lblBusyQueue.setText(sb.toString());
+                    v.getPatente(), v.getEstado(), v.getNodoActual(), nodo.getNombreEsquina());
+            lblInfo.setText(infoVehiculo);
+            lblBusyQueue.setText(sistema.obtenerTextoColaOcupados());
         }
     }
 
@@ -374,25 +350,36 @@ public class DashboardController {
         }
     }
 
-    /**
-     * Inicializa el controlador despues de que el FXML ha sido cargado.
-     * <p>
-     *     Carga el grafo vial desde los archivos CSV, construye la proyeccion
-     *     geografica y el renderizador del mapa. Luego crea el sistema de
-     *     viajes con Dijkstra como algoritmo de ruteo, instancia el gestor
-     *     de simulacion y lo inicia. Vincula el tamano del canvas al
-     *     contenedor y programa el primer renderizado cuando la escena
-     *     este disponible.
-     * </p>
-     */
     @FXML
     public void initialize() {
+        ProgressIndicator loader = mostrarLoader();
+
+        Task<GrafoMapa> loadTask = crearTareaCargaGrafo();
+        loadTask.setOnSucceeded(e -> {
+            ocultarLoader(loader);
+            onGrafoCargado(loadTask.getValue());
+        });
+        loadTask.setOnFailed(e -> {
+            ocultarLoader(loader);
+            System.err.println("Error al cargar el grafo: " + loadTask.getException().getMessage());
+        });
+        new Thread(loadTask).start();
+    }
+
+    private ProgressIndicator mostrarLoader() {
         ProgressIndicator loader = new ProgressIndicator();
         loader.setMaxSize(50, 50);
         mapContainer.getChildren().add(loader);
         StackPane.setAlignment(loader, Pos.CENTER);
+        return loader;
+    }
 
-        Task<GrafoMapa> loadTask = new Task<>() {
+    private void ocultarLoader(ProgressIndicator loader) {
+        mapContainer.getChildren().remove(loader);
+    }
+
+    private Task<GrafoMapa> crearTareaCargaGrafo() {
+        return new Task<>() {
             @Override
             protected GrafoMapa call() {
                 GrafoMapa g = new GrafoMapa();
@@ -400,147 +387,169 @@ public class DashboardController {
                 return g;
             }
         };
+    }
 
-        loadTask.setOnSucceeded(e -> {
-            mapContainer.getChildren().remove(loader);
-            grafoMapa = loadTask.getValue();
+    private void onGrafoCargado(GrafoMapa mapa) {
+        grafoMapa = mapa;
+        inicializarSistema(mapa);
+        configurarSelectorAlgoritmo();
+        precomputarFloydEnBackground();
+        configurarCanvas();
+        construirSidePanel();
+        iniciarTimelineEstadisticas();
+        configurarEscena();
+    }
 
-            proyeccion = new ProyeccionMapa(grafoMapa.getListaEsquinas());
-            renderizadorMapa = new MapCanvas(mapaCanvas, grafoMapa, proyeccion);
-            renderizadorMapa.inicializar();
+    private void inicializarSistema(GrafoMapa mapa) {
+        proyeccion = new ProyeccionMapa(mapa.getListaEsquinas());
+        renderizadorMapa = new MapCanvas(mapaCanvas, mapa, proyeccion);
+        renderizadorMapa.inicializar();
 
-            btnResetView.setOnAction(evt -> {
-                proyeccion.resetView();
-                renderizadorMapa.redibujar();
-            });
+        btnResetView.setOnAction(evt -> {
+            proyeccion.resetView();
+            renderizadorMapa.redibujar();
+        });
 
-            dijkstraRuteador = new DijkstraRutas(grafoMapa);
-            sistema = new SistemaViajes(grafoMapa, dijkstraRuteador);
-            gestor = new GestorSimulacion(sistema, renderizadorMapa, grafoMapa, dijkstraRuteador);
+        dijkstraRuteador = new DijkstraRutas(mapa);
+        sistema = new SistemaViajes(mapa, dijkstraRuteador);
+        gestor = new GestorSimulacion(sistema, renderizadorMapa, mapa, dijkstraRuteador);
 
-            pausaDespacho = new PauseTransition(Duration.millis(1500));
-            pausaDespacho.setOnFinished(evt -> procesarSiguienteDespacho());
+        pausaDespacho = new PauseTransition(Duration.millis(1500));
+        pausaDespacho.setOnFinished(evt -> procesarSiguienteDespacho());
+    }
 
-            algoritmoSelector.getItems().addAll("Dijkstra", "Floyd-Warshall");
-            algoritmoSelector.setValue("Dijkstra");
-            algoritmoSelector.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> {
-                if (val != null) onAlgoritmoCambiado(val);
-            });
+    private void configurarSelectorAlgoritmo() {
+        algoritmoSelector.getItems().addAll("Dijkstra", "Floyd-Warshall");
+        algoritmoSelector.setValue("Dijkstra");
+        algoritmoSelector.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> {
+            if (val != null) onAlgoritmoCambiado(val);
+        });
+    }
 
-            precomputarFloydEnBackground();
+    private void configurarCanvas() {
+        mapaCanvas.widthProperty().bind(mapContainer.widthProperty());
+        mapaCanvas.heightProperty().bind(mapContainer.heightProperty());
+        mapaCanvas.widthProperty().addListener((obs, old, n) -> {
+            if (gestor != null) gestor.renderizarFrame();
+        });
+        mapaCanvas.heightProperty().addListener((obs, old, n) -> {
+            if (gestor != null) gestor.renderizarFrame();
+        });
 
-            mapaCanvas.widthProperty().bind(mapContainer.widthProperty());
-            mapaCanvas.heightProperty().bind(mapContainer.heightProperty());
-            mapaCanvas.widthProperty().addListener((obs, old, n) -> {
-                if (gestor != null) gestor.renderizarFrame();
-            });
-            mapaCanvas.heightProperty().addListener((obs, old, n) -> {
-                if (gestor != null) gestor.renderizarFrame();
-            });
+        mapaCanvas.setOnMousePressed(DashboardController.this::onMousePressed);
+        mapaCanvas.setOnMouseDragged(DashboardController.this::onMouseDragged);
+        mapaCanvas.setOnMouseClicked(DashboardController.this::onCanvasClick);
+        mapaCanvas.setOnScroll(DashboardController.this::onScroll);
+    }
 
-            mapaCanvas.setOnMousePressed(DashboardController.this::onMousePressed);
-            mapaCanvas.setOnMouseDragged(DashboardController.this::onMouseDragged);
-            mapaCanvas.setOnMouseClicked(DashboardController.this::onCanvasClick);
-            mapaCanvas.setOnScroll(DashboardController.this::onScroll);
+    private void construirSidePanel() {
+        lblInfo = new Label("Haga clic en un usuario\npara solicitar un viaje,\no en un vehiculo para\nver su informacion.");
+        lblInfo.setWrapText(true);
+        lblInfo.getStyleClass().add("info-label");
 
-            lblInfo = new Label("Haga clic en un usuario\npara solicitar un viaje,\no en un vehiculo para\nver su informacion.");
-            lblInfo.setWrapText(true);
-            lblInfo.getStyleClass().add("info-label");
+        lblColaDespacho = new Label("");
+        lblColaDespacho.setWrapText(true);
+        lblColaDespacho.getStyleClass().add("mono-label");
 
-            lblColaDespacho = new Label("");
-            lblColaDespacho.setWrapText(true);
-            lblColaDespacho.getStyleClass().add("mono-label");
+        lblBusyQueue = new Label("");
+        lblBusyQueue.setWrapText(true);
+        lblBusyQueue.getStyleClass().add("mono-label");
 
-            lblBusyQueue = new Label("");
-            lblBusyQueue.setWrapText(true);
-            lblBusyQueue.getStyleClass().add("mono-label");
+        ScrollPane infoScroll = new ScrollPane(lblInfo);
+        infoScroll.setFitToWidth(true);
+        infoScroll.setPrefHeight(100);
+        infoScroll.setMaxHeight(120);
+        infoScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        infoScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-            ScrollPane busyScroll = new ScrollPane(lblBusyQueue);
-            busyScroll.setFitToWidth(true);
-            busyScroll.setPrefHeight(200);
-            busyScroll.setMaxHeight(250);
-            busyScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-            busyScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        ScrollPane colaScroll = new ScrollPane(lblColaDespacho);
+        colaScroll.setFitToWidth(true);
+        colaScroll.setPrefHeight(120);
+        colaScroll.setMaxHeight(200);
+        colaScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        colaScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-            ScrollPane infoScroll = new ScrollPane(lblInfo);
-            infoScroll.setFitToWidth(true);
-            infoScroll.setPrefHeight(100);
-            infoScroll.setMaxHeight(120);
-            infoScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-            infoScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        ScrollPane busyScroll = new ScrollPane(lblBusyQueue);
+        busyScroll.setFitToWidth(true);
+        busyScroll.setPrefHeight(200);
+        busyScroll.setMaxHeight(250);
+        busyScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        busyScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-            ScrollPane colaScroll = new ScrollPane(lblColaDespacho);
-            colaScroll.setFitToWidth(true);
-            colaScroll.setPrefHeight(120);
-            colaScroll.setMaxHeight(200);
-            colaScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-            colaScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        sidePanel.getChildren().addAll(infoScroll, colaScroll, busyScroll);
 
-            sidePanel.getChildren().addAll(infoScroll, colaScroll, busyScroll);
+        Label sep = new Label("─────────────────");
+        sep.getStyleClass().add("separator-label");
 
-            Label sep = new Label("─────────────────");
-            sep.getStyleClass().add("separator-label");
+        Label lblStatsHeader = new Label("Estadisticas");
+        lblStatsHeader.getStyleClass().add("stats-header");
 
-            Label lblStatsHeader = new Label("Estadisticas");
-            lblStatsHeader.getStyleClass().add("stats-header");
+        lblStats = new Label("(aun sin datos)");
+        lblStats.setWrapText(true);
+        lblStats.getStyleClass().add("stats-content");
 
-            lblStats = new Label("(aun sin datos)");
-            lblStats.setWrapText(true);
-            lblStats.getStyleClass().add("stats-content");
+        sidePanel.getChildren().addAll(sep, lblStatsHeader, lblStats);
+    }
 
-            sidePanel.getChildren().addAll(sep, lblStatsHeader, lblStats);
+    private void iniciarTimelineEstadisticas() {
+        Timeline statsTimer = new Timeline(
+            new KeyFrame(Duration.millis(500), evt -> actualizarEstadisticas())
+        );
+        statsTimer.setCycleCount(Timeline.INDEFINITE);
+        statsTimer.play();
+    }
 
-            Timeline statsTimer = new Timeline(
-                new KeyFrame(Duration.millis(500), evt -> actualizarEstadisticas())
-            );
-            statsTimer.setCycleCount(Timeline.INDEFINITE);
-            statsTimer.play();
+    private void configurarEscena() {
+        configurarSimulacionEnEscena();
+        configurarAnchoSidePanel();
+    }
 
-            if (mapaCanvas.getScene() != null) {
-                renderizadorMapa.redibujar();
-                gestor.inicializarEntidades();
-                adaptadorSimulacion = new SimulacionFXAdapter(gestor);
-                adaptadorSimulacion.iniciar();
-            } else {
-                mapaCanvas.sceneProperty().addListener((obs, old, scene) -> {
-                    if (scene != null) {
-                        Platform.runLater(() -> {
-                            renderizadorMapa.redibujar();
-                            gestor.inicializarEntidades();
-                            adaptadorSimulacion = new SimulacionFXAdapter(gestor);
-                            adaptadorSimulacion.iniciar();
-                        });
-                    }
-                });
-            }
-
-            var widthListener = (javafx.beans.value.ChangeListener<Number>) (w, o, n) -> {
-                double wVal = n.doubleValue();
-                sidePanel.setPrefWidth(Math.max(180, Math.min(350, wVal * 0.2)));
-                if (wVal < 1000 && !sidePanel.getStyleClass().contains("narrow")) {
-                    sidePanel.getStyleClass().add("narrow");
-                } else if (wVal >= 1000) {
-                    sidePanel.getStyleClass().remove("narrow");
+    private void configurarSimulacionEnEscena() {
+        if (mapaCanvas.getScene() != null) {
+            iniciarSimulacion();
+        } else {
+            mapaCanvas.sceneProperty().addListener((obs, old, scene) -> {
+                if (scene != null) {
+                    Platform.runLater(this::iniciarSimulacion);
                 }
-            };
+            });
+        }
+    }
 
-            if (sidePanel.getScene() != null) {
-                sidePanel.getScene().widthProperty().addListener(widthListener);
-            } else {
-                sidePanel.sceneProperty().addListener((obs, old, scene) -> {
-                    if (scene != null) {
-                        scene.widthProperty().addListener(widthListener);
-                    }
-                });
+    private void configurarAnchoSidePanel() {
+        javafx.beans.value.ChangeListener<Number> widthListener = crearWidthListener();
+        if (sidePanel.getScene() != null) {
+            sidePanel.getScene().widthProperty().addListener(widthListener);
+        } else {
+            sidePanel.sceneProperty().addListener((obs, old, scene) -> {
+                if (scene != null) {
+                    scene.widthProperty().addListener(widthListener);
+                }
+            });
+        }
+    }
+
+    private void iniciarSimulacion() {
+        renderizadorMapa.redibujar();
+        gestor.inicializarEntidades();
+        adaptadorSimulacion = new SimulacionFXAdapter(gestor);
+        adaptadorSimulacion.iniciar();
+    }
+
+    private javafx.beans.value.ChangeListener<Number> crearWidthListener() {
+        return (w, o, n) -> {
+            double wVal = n.doubleValue();
+            sidePanel.setPrefWidth(Math.max(180, Math.min(350, wVal * 0.2)));
+            if (wVal < 1000 && !sidePanel.getStyleClass().contains("narrow")) {
+                sidePanel.getStyleClass().add("narrow");
+            } else if (wVal >= 1000) {
+                sidePanel.getStyleClass().remove("narrow");
             }
-        });
+        };
+    }
 
-        loadTask.setOnFailed(e -> {
-            mapContainer.getChildren().remove(loader);
-            System.err.println("Error al cargar el grafo: " + loadTask.getException().getMessage());
-        });
-
-        new Thread(loadTask).start();
+    private void agregarWidthListener(javafx.scene.Scene scene) {
+        scene.widthProperty().addListener(crearWidthListener());
     }
 
     /**

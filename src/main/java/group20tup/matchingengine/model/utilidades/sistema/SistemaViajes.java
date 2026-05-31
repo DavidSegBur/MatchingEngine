@@ -3,6 +3,7 @@ package group20tup.matchingengine.model.utilidades.sistema;
 import group20tup.matchingengine.model.estructuras.lineales.listas.ListaDoubleLinkedL;
 import group20tup.matchingengine.model.estructuras.lineales.colas.ColaPrioridadMonticulo;
 import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoDirigido;
+import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
@@ -28,7 +29,6 @@ public class SistemaViajes {
     private static final double INFINITO = Double.POSITIVE_INFINITY;
     private static final double PROBABILIDAD_RECHAZO = 0.3;
     private static final double TARIFA_POR_KM = 0.50;
-    private static final double VELOCIDAD_PROMEDIO_M_S = 25.0 / 3.6;
 
     private final GrafoDirigido grafo;
     private CalculadorRutas ruteador;
@@ -145,7 +145,7 @@ public class SistemaViajes {
      * @return ColaPrioridadMonticulo con vehiculos en estado EN_VIAJE
      */
     public ColaPrioridadMonticulo getColaOcupados() {
-        return colaOcupados;
+        return new ColaPrioridadMonticulo(colaOcupados);
     }
 
     /**
@@ -198,17 +198,7 @@ public class SistemaViajes {
             cancelarDespacho();
         }
 
-        colaDespachoActiva = new ColaPrioridadMonticulo(vehiculos.tamanio());
-        for (int i = 0; i < vehiculos.tamanio(); i++) {
-            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
-            if (v.isDisponible()) {
-                double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
-                if (eta < INFINITO) {
-                    colaDespachoActiva.insertar(i, eta);
-                }
-            }
-        }
-
+        colaDespachoActiva = construirColaDespacho(usuario);
         despachoEnCurso = true;
         totalCandidatos = colaDespachoActiva.tamanio();
         candidatosProcesados = 0;
@@ -282,6 +272,20 @@ public class SistemaViajes {
      * @param usuario Usuario destino para calcular ETA
      * @return String con la cola formateada, o "(sin candidatos)" si no hay
      */
+    private ColaPrioridadMonticulo construirColaDespacho(Usuario usuario) {
+        ColaPrioridadMonticulo cola = new ColaPrioridadMonticulo(vehiculos.tamanio());
+        for (int i = 0; i < vehiculos.tamanio(); i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
+            if (v.isDisponible()) {
+                double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
+                if (eta < INFINITO) {
+                    cola.insertar(i, eta);
+                }
+            }
+        }
+        return cola;
+    }
+
     public String obtenerTextoColaDespacho(Usuario usuario) {
         int n = vehiculos.tamanio();
         int[] indices = new int[n];
@@ -354,17 +358,7 @@ public class SistemaViajes {
      */
     public Vehiculo solicitarViaje(Usuario usuario, Random rnd) {
         estadisticas.registrarSolicitud();
-        ColaPrioridadMonticulo colaDespacho = new ColaPrioridadMonticulo(vehiculos.tamanio());
-
-        for (int i = 0; i < vehiculos.tamanio(); i++) {
-            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
-            if (v.isDisponible()) {
-                double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
-                if (eta < INFINITO) {
-                    colaDespacho.insertar(i, eta);
-                }
-            }
-        }
+        ColaPrioridadMonticulo colaDespacho = construirColaDespacho(usuario);
 
         while (!colaDespacho.estaVacia()) {
             int idxVehiculo = colaDespacho.extraerMin();
@@ -415,7 +409,7 @@ public class SistemaViajes {
      */
     public double calcularTarifa(double etaSegundos) {
         if (etaSegundos >= INFINITO) return 0;
-        double distanciaKm = etaSegundos * VELOCIDAD_PROMEDIO_M_S / 1000.0;
+        double distanciaKm = etaSegundos * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
         return distanciaKm * TARIFA_POR_KM;
     }
 
@@ -505,7 +499,7 @@ public class SistemaViajes {
         for (int i = 0; i < ruta.length - 1; i++) {
             etaTotal += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
         }
-        double distanciaKm = etaTotal * VELOCIDAD_PROMEDIO_M_S / 1000.0;
+        double distanciaKm = etaTotal * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
         double tarifa = calcularTarifa(etaTotal);
         estadisticas.registrarViajeCompletado(etaTotal, tarifa, distanciaKm);
 
@@ -537,6 +531,40 @@ public class SistemaViajes {
                 colaOcupados.insertar(i, eta);
             }
         }
+    }
+
+    /**
+     * Devuelve el texto formateado de la cola de ocupados para la UI.
+     * <p>
+     *     Reconstruye la cola, la drena para ordenar los vehiculos por
+     *     tiempo restante, y la recontruye inmediatamente para no alterar
+     *     el estado interno del sistema. Cada vehiculo muestra: patente,
+     *     tiempo restante aproximado y distancia restante.
+     * </p>
+     * @return Texto con el listado de vehiculos ocupados ordenados
+     */
+    public String obtenerTextoColaOcupados() {
+        reconstruirColaOcupados();
+        int n = colaOcupados.tamanio();
+        int[] indices = new int[n];
+        for (int i = 0; i < n; i++) {
+            indices[i] = colaOcupados.extraerMin();
+        }
+        StringBuilder sb = new StringBuilder("--- Cola Ocupados ---\n");
+        for (int i = 0; i < n; i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(indices[i]);
+            double eta = 0;
+            int[] ruta = v.getRutaActiva();
+            for (int j = v.getIndiceRuta(); j < ruta.length - 1; j++) {
+                eta += grafo.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
+            }
+            double distKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
+            sb.append(v.getPatente())
+                    .append("  ~").append(String.format("%.0f", eta)).append("s  ")
+                    .append(String.format("%.1f", distKm)).append("km\n");
+        }
+        reconstruirColaOcupados();
+        return sb.toString();
     }
 
     /**

@@ -26,6 +26,14 @@ public class ColaPrioridadMonticulo {
     }
 
     /**
+     * Copia superficial de otra cola de prioridad.
+     * @param other Cola a copiar
+     */
+    public ColaPrioridadMonticulo(ColaPrioridadMonticulo other) {
+        this.heap = new MonticuloBinario(other.heap);
+    }
+
+    /**
      * Inserta un elemento con su prioridad en la cola.
      * @param elemento Indice del elemento a insertar
      * @param prioridad Valor de prioridad (menor = mayor prioridad)

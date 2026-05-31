@@ -26,6 +26,19 @@ public class MonticuloBinario {
     }
 
     /**
+     * Copia superficial de otro monticulo binario.
+     * @param other Monticulo a copiar
+     */
+    public MonticuloBinario(MonticuloBinario other) {
+        this.capacity = other.size;
+        this.size = other.size;
+        this.heap = new int[this.capacity];
+        this.prioridades = new double[this.capacity];
+        System.arraycopy(other.heap, 0, this.heap, 0, this.size);
+        System.arraycopy(other.prioridades, 0, this.prioridades, 0, this.size);
+    }
+
+    /**
      * Inserta un nodo con su prioridad en el monticulo.
      * 
      * @param nodo     Indice del nodo
@@ -37,8 +50,8 @@ public class MonticuloBinario {
             int newCapacity = capacity * 2;
             int[] newHeap = new int[newCapacity];
             double[] newPrioridades = new double[newCapacity];
-            System.arraycopy(heap, 0, newHeap, 0, capacity);
-            System.arraycopy(prioridades, 0, newPrioridades, 0, capacity);
+            System.arraycopy(heap, 0, newHeap, 0, size);
+            System.arraycopy(prioridades, 0, newPrioridades, 0, size);
             heap = newHeap;
             prioridades = newPrioridades;
             capacity = newCapacity;

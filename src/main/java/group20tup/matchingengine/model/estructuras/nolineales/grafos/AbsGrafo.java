@@ -43,11 +43,6 @@ public abstract class AbsGrafo {
     }
 
     /**
-     * Valor infinito usado para representar ausencia de conexion.
-     */
-    protected static double infinito= Double.POSITIVE_INFINITY;
-
-    /**
      * Metodo abstracto para cargar los datos del grafo.
      * Cada subclase debe implementar su propia logica de carga.
      */

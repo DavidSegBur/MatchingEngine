@@ -22,7 +22,7 @@ public class FloydWarshallRutas implements CalculadorRutas {
 
     /**
      * Construye el calculador de Floyd-Warshall para un grafo.
-     * Precalcula los caminos mas cortos de todos los pares en el tiempo O(n²)
+     * Precalcula los caminos mas cortos de todos los pares en el tiempo O(n³)
      * 
      * @param grafo El grafo dirigido a procesar
      */

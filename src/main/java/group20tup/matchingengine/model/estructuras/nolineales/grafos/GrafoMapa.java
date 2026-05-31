@@ -25,6 +25,7 @@ public class GrafoMapa extends GrafoDirigido {
             "/group20tup/matchingengine/data/meta_datos_nodos_2k.csv";
     private static final String RUTA_MATRIZ =
             "/group20tup/matchingengine/data/matriz_nodos_2k.csv";
+    public static final double VELOCIDAD_PROMEDIO_M_S = 25.0 / 3.6;
 
     private ListaDoubleLinkedL listaEsquinas;
     private long[] mapeoIndicesAIdOSM;
@@ -72,39 +73,31 @@ public class GrafoMapa extends GrafoDirigido {
             throw new IllegalArgumentException("No se encontro el archivo de metadatos en: " + RUTA_METADATOS);
         }
 
-        int lineCount = 0;
+        // Single pass: collect lines into a dynamically grown array
+        String[] lineas = new String[256];
+        int total = 0;
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            br.readLine();
-            while (br.readLine() != null) {
-                lineCount++;
-            }
-        } catch (Exception ex) {
-            System.err.println("No se pudo encontrar el archivo para cargar los metadatos: " + ex.getMessage());
-        }
-
-        String[] lineas = new String[lineCount];
-        is = getClass().getResourceAsStream(RUTA_METADATOS);
-        if (is == null) {
-            throw new IllegalArgumentException("No se encontro el archivo de metadatos en: " + RUTA_METADATOS);
-        }
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            br.readLine();
-            int idx = 0;
+            br.readLine(); // skip header
             String linea;
             while ((linea = br.readLine()) != null) {
                 if (!linea.trim().isEmpty()) {
-                    lineas[idx++] = linea;
+                    if (total >= lineas.length) {
+                        String[] nuevo = new String[lineas.length * 2];
+                        System.arraycopy(lineas, 0, nuevo, 0, lineas.length);
+                        lineas = nuevo;
+                    }
+                    lineas[total++] = linea;
                 }
             }
         } catch (Exception ex) {
-            System.err.println("No se pudo encontrar el archivo para cargar los metadatos: " + ex.getMessage());
+            throw new IllegalArgumentException("Error al leer metadatos: " + ex.getMessage(), ex);
         }
 
-        this.mapeoIndicesAIdOSM = new long[lineas.length];
+        this.mapeoIndicesAIdOSM = new long[total];
 
         int contadorSecuencial = 0;
-        for (String linea : lineas) {
-            String[] campos = linea.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+        for (int i = 0; i < total; i++) {
+            String[] campos = lineas[i].split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
             if (campos.length >= 6) {
                 long idOSM = Long.parseLong(campos[0].trim());
                 double latitud = Double.parseDouble(campos[1].trim());
@@ -141,7 +134,7 @@ public class GrafoMapa extends GrafoDirigido {
             br.readLine();
             String linea;
             int filaInterna = 0;
-            final double VELOCIDAD_METROS_POR_SEGUNDO = 25.0 / 3.6;
+            final double VELOCIDAD_METROS_POR_SEGUNDO = VELOCIDAD_PROMEDIO_M_S;
 
             while ((linea = br.readLine()) != null) {
                 if (linea.trim().isEmpty()) {

@@ -121,13 +121,16 @@ public class GestorSimulacion implements MotorSimulacion {
                 if (vecino != -1) {
                     v.setRutaActiva(new int[]{v.getNodoActual(), vecino});
                 } else {
-                    int nodo;
-                    int intentos = 0;
-                    do {
-                        nodo = rnd.nextInt(grafo.getOrden());
-                        intentos++;
-                    } while (nodo == v.getNodoActual() && intentos < 10);
-                    if (nodo != v.getNodoActual()) {
+                    int nodo = -1;
+                    MatrizGrafo matriz = grafo.getMatrizCosto();
+                    for (int intentos = 0; intentos < 50; intentos++) {
+                        int candidato = rnd.nextInt(grafo.getOrden());
+                        if (candidato != v.getNodoActual() && matriz.areConnected(v.getNodoActual(), candidato)) {
+                            nodo = candidato;
+                            break;
+                        }
+                    }
+                    if (nodo != -1) {
                         v.setRutaActiva(new int[]{v.getNodoActual(), nodo});
                     }
                 }
@@ -136,11 +139,7 @@ public class GestorSimulacion implements MotorSimulacion {
             avanzarProgreso(v);
 
             if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
-                double etaRestante = 0;
-                int[] rutaV = v.getRutaActiva();
-                for (int j = v.getIndiceRuta(); j < rutaV.length - 1; j++) {
-                    etaRestante += grafo.getMatrizCosto().devolver(rutaV[j], rutaV[j + 1]);
-                }
+                double etaRestante = sistema.calcularRestanteETA(i);
                 sistema.actualizarPrioridadOcupado(i, etaRestante);
             }
         }

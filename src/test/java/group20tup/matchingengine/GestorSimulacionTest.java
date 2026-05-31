@@ -110,8 +110,8 @@ class GestorSimulacionTest {
     }
 
     @Test
-    @DisplayName("Vehiculo en nodo sin salidas usa ruta de 2 nodos a destino aleatorio")
-    void testRoamingSinSalidasUsaDestinoAleatorio() {
+    @DisplayName("Vehiculo en nodo sin salidas se queda sin ruta (no teleporta)")
+    void testRoamingSinSalidasSeQuedaSinRuta() {
         int nodo = 0;
         Vehiculo v = new Vehiculo("SNSL", nodo);
         s.registrarVehiculo(v);
@@ -119,8 +119,8 @@ class GestorSimulacionTest {
         gestor.tick();
 
         int[] ruta = v.getRutaActiva();
-        assertTrue(ruta.length >= 2);
-        assertEquals(nodo, ruta[0]);
+        assertTrue(ruta.length == 0 || (ruta.length >= 2 && ruta[0] == nodo
+                && mapaSalta.getMatrizCosto().areConnected(nodo, ruta[1])));
     }
 
     @Test

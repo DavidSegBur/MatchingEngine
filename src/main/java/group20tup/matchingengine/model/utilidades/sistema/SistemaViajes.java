@@ -467,7 +467,6 @@ public class SistemaViajes {
         if (ruta.length >= 2) {
             vehiculo.setEstado(EstadoVehiculo.EN_VIAJE);
             vehiculo.setRutaActiva(ruta);
-
             reconstruirColaOcupados();
             return true;
         } else {
@@ -516,11 +515,7 @@ public class SistemaViajes {
         for (int i = 0; i < vehiculos.tamanio(); i++) {
             Vehiculo v = (Vehiculo) vehiculos.devolver(i);
             if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
-                double eta = 0;
-                int[] ruta = v.getRutaActiva();
-                for (int j = v.getIndiceRuta(); j < ruta.length - 1; j++) {
-                    eta += grafo.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
-                }
+                double eta = calcularRestanteETA(i);
                 colaOcupados.insertar(i, eta);
             }
         }
@@ -546,11 +541,7 @@ public class SistemaViajes {
         StringBuilder sb = new StringBuilder("--- Cola Ocupados ---\n");
         for (int i = 0; i < n; i++) {
             Vehiculo v = (Vehiculo) vehiculos.devolver(indices[i]);
-            double eta = 0;
-            int[] ruta = v.getRutaActiva();
-            for (int j = v.getIndiceRuta(); j < ruta.length - 1; j++) {
-                eta += grafo.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
-            }
+            double eta = calcularRestanteETA(indices[i]);
             double distKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
             sb.append(v.getPatente())
                     .append("  ~").append(String.format("%.0f", eta)).append("s  ")
@@ -558,6 +549,26 @@ public class SistemaViajes {
         }
         reconstruirColaOcupados();
         return sb.toString();
+    }
+
+    /**
+     * Calcula el ETA restante (en segundos) para un vehiculo basado en su
+     * posicion actual en la ruta activa.
+     * 
+     * @param indiceVehiculo Indice del vehiculo en la lista de vehiculos
+     * @return Tiempo restante estimado en segundos, o INFINITO si no hay ruta
+     */
+    public double calcularRestanteETA(int indiceVehiculo) {
+        Vehiculo v = (Vehiculo) vehiculos.devolver(indiceVehiculo);
+        int[] ruta = v.getRutaActiva();
+        if (ruta.length == 0) {
+            return INFINITO;
+        }
+        double eta = 0;
+        for (int j = v.getIndiceRuta(); j < ruta.length - 1; j++) {
+            eta += grafo.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
+        }
+        return eta;
     }
 
     /**

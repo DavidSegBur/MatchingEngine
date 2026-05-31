@@ -22,6 +22,7 @@ public class Vehiculo {
     private Usuario pasajeroAbordo;
     private int[] rutaActiva;
     private int indiceRuta;
+    private long destacadoHasta;
 
     /**
      * Construye un vehiculo con los datos basicos.
@@ -171,6 +172,24 @@ public class Vehiculo {
      */
     public void setIndiceRuta(int indiceRuta) {
         this.indiceRuta = indiceRuta;
+    }
+
+    /**
+     * Devuelve el timestamp nanoTime hasta el cual el vehiculo debe
+     * mostrarse destacado (highlight) en el mapa.
+     * @return nanoTime de expiracion, o 0 si no esta destacado
+     */
+    public long getDestacadoHasta() {
+        return destacadoHasta;
+    }
+
+    /**
+     * Establece el timestamp nanoTime hasta el cual el vehiculo
+     * aparece destacado en el mapa.
+     * @param destacadoHasta nanoTime de expiracion, o 0 para desactivar
+     */
+    public void setDestacadoHasta(long destacadoHasta) {
+        this.destacadoHasta = destacadoHasta;
     }
 
     /**

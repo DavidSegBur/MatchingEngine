@@ -37,6 +37,13 @@ public class SistemaViajes {
     private final ColaPrioridadMonticulo colaOcupados;
     private final EstadisticasSimulacion estadisticas;
 
+    private ColaPrioridadMonticulo colaDespachoActiva;
+    private boolean despachoEnCurso;
+    private int totalCandidatos;
+    private int candidatosProcesados;
+    private Random rndDespacho;
+    private Usuario usuarioDespachando;
+
     /**
      * Construye el sistema de viajes con el grafo y el ruteador dados.
      * @param grafo Grafo dirigido con la red vial
@@ -147,6 +154,170 @@ public class SistemaViajes {
      */
     public EstadisticasSimulacion getEstadisticas() {
         return estadisticas;
+    }
+
+    /**
+     * Indica si hay un proceso de despacho asincronico en curso.
+     * @return true si se inicio un despacho y aun no finalizo
+     */
+    public boolean hayDespachoActivo() {
+        return despachoEnCurso;
+    }
+
+    /**
+     * Devuelve la cantidad total de candidatos en el despacho actual.
+     * @return Total de vehiculos elegibles al iniciar el despacho
+     */
+    public int getTotalCandidatosDespacho() {
+        return totalCandidatos;
+    }
+
+    /**
+     * Devuelve cuantos candidatos se han procesado hasta ahora.
+     * @return Cantidad de candidatos evaluados
+     */
+    public int getCandidatosProcesadosDespacho() {
+        return candidatosProcesados;
+    }
+
+    /**
+     * Inicia un proceso de despacho asincronico para un usuario.
+     * <p>
+     *     Crea la cola de prioridad con los vehiculos disponibles ordenados
+     *     por ETA al nodo del usuario. Si ya habia un despacho en curso lo
+     *     cancela primero. Este metodo no bloquea: el llamador debe invocar
+     *     {@link #procesarSiguienteDespacho()} repetidamente con pausas entre
+     *     cada intento.
+     * </p>
+     * @param usuario Usuario que solicita el viaje
+     * @param rnd Generador aleatorio para simulacion de rechazo (null = sin rechazo)
+     */
+    public void iniciarDespacho(Usuario usuario, Random rnd) {
+        estadisticas.registrarSolicitud();
+        if (despachoEnCurso) {
+            cancelarDespacho();
+        }
+
+        colaDespachoActiva = new ColaPrioridadMonticulo(vehiculos.tamanio());
+        for (int i = 0; i < vehiculos.tamanio(); i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
+            if (v.isDisponible()) {
+                double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
+                if (eta < INFINITO) {
+                    colaDespachoActiva.insertar(i, eta);
+                }
+            }
+        }
+
+        despachoEnCurso = true;
+        totalCandidatos = colaDespachoActiva.tamanio();
+        candidatosProcesados = 0;
+        this.rndDespacho = rnd;
+        this.usuarioDespachando = usuario;
+    }
+
+    /**
+     * Procesa el siguiente candidato en el despacho asincronico actual.
+     * <p>
+     *     Extrae el vehiculo con menor ETA de la cola de despacho. Si el
+     *     vehiculo ya no esta disponible (ej. fue asignado por otro proceso)
+     *     o rechaza el viaje, retorna {@code null} pero mantiene el despacho
+     *     activo ({@link #hayDespachoActivo()} = true) para que el llamador
+     *     reintente. Si acepta, retorna el vehiculo y finaliza el despacho.
+     *     Si la cola se agota, retorna {@code null} y finaliza el despacho.
+     * </p>
+     * @return El vehiculo que acepto el viaje, o null si rechazo o no hay mas
+     */
+    public Vehiculo procesarSiguienteDespacho() {
+        if (!despachoEnCurso || colaDespachoActiva == null || colaDespachoActiva.estaVacia()) {
+            despachoEnCurso = false;
+            return null;
+        }
+
+        int idxVehiculo = colaDespachoActiva.extraerMin();
+        Vehiculo candidato = (Vehiculo) vehiculos.devolver(idxVehiculo);
+        candidatosProcesados++;
+
+        long DESTACADO_DURACION_NANOS = 800_000_000L;
+        candidato.setDestacadoHasta(System.nanoTime() + DESTACADO_DURACION_NANOS);
+
+        if (!candidato.isDisponible()) {
+            return null;
+        }
+
+        if (rndDespacho != null && rndDespacho.nextDouble() < PROBABILIDAD_RECHAZO) {
+            estadisticas.registrarViajeRechazado();
+            return null;
+        }
+
+        aceptarViaje(candidato, usuarioDespachando);
+        despachoEnCurso = false;
+        return candidato;
+    }
+
+    /**
+     * Cancela el proceso de despacho asincronico en curso.
+     * <p>
+     *     Reinicia todos los campos de estado del despacho para que
+     *     el sistema quede limpio para una nueva solicitud.
+     * </p>
+     */
+    public void cancelarDespacho() {
+        despachoEnCurso = false;
+        this.rndDespacho = null;
+        this.usuarioDespachando = null;
+        this.colaDespachoActiva = null;
+    }
+
+    /**
+     * Genera un texto formateado con la cola de despacho ordenada por ETA.
+     * <p>
+     *     Escanea todos los vehiculos disponibles, calcula su ETA al nodo
+     *     del usuario, ordena por ETA ascendente (mas cercano primero) y
+     *     devuelve un texto formato lista numerada con patente y ETA.
+     * </p>
+     * @param usuario Usuario destino para calcular ETA
+     * @return String con la cola formateada, o "(sin candidatos)" si no hay
+     */
+    public String obtenerTextoColaDespacho(Usuario usuario) {
+        int n = vehiculos.tamanio();
+        int[] indices = new int[n];
+        double[] etas = new double[n];
+        int count = 0;
+
+        for (int i = 0; i < n; i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
+            if (v.isDisponible()) {
+                double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
+                if (eta < INFINITO) {
+                    indices[count] = i;
+                    etas[count] = eta;
+                    count++;
+                }
+            }
+        }
+
+        if (count == 0) return "(sin candidatos)";
+
+        for (int i = 0; i < count - 1; i++) {
+            int minIdx = i;
+            for (int j = i + 1; j < count; j++) {
+                if (etas[j] < etas[minIdx]) {
+                    minIdx = j;
+                }
+            }
+            if (minIdx != i) {
+                int tmpI = indices[i]; indices[i] = indices[minIdx]; indices[minIdx] = tmpI;
+                double tmpE = etas[i]; etas[i] = etas[minIdx]; etas[minIdx] = tmpE;
+            }
+        }
+
+        StringBuilder sb = new StringBuilder("── Cola de despacho ──\n");
+        for (int i = 0; i < count; i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(indices[i]);
+            sb.append(String.format("%d. %s — %.0fs\n", i + 1, v.getPatente(), etas[i]));
+        }
+        return sb.toString();
     }
 
     /**

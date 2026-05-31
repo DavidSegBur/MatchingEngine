@@ -29,6 +29,7 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
 import java.util.Random;
@@ -72,7 +73,10 @@ public class DashboardController {
     private volatile boolean floydListo = false;
     private Label lblInfo;
     private Label lblBusyQueue;
+    private Label lblColaDespacho;
     private Label lblStats;
+    private PauseTransition pausaDespacho;
+    private Usuario usuarioDespachando;
     private double mouseX;
     private double mouseY;
     private boolean dragging;
@@ -154,11 +158,16 @@ public class DashboardController {
     /**
      * Procesa la solicitud de viaje de un usuario desde la interfaz grafica.
      * Verifica disponibilidad y alcanzabilidad de vehiculos, y si es posible
-     * muestra un dialogo con los detalles del viaje asignado (ETA, distancia,
-     * tarifa y patente). Si el usuario es inalcanzable lo elimina del mapa.
+     * inicia un proceso de despacho asincronico con demora simulada entre
+     * candidatos. Si el usuario es inalcanzable lo elimina del mapa.
      * @param usuario Usuario que solicita el viaje
      */
     private void solicitarViajeUI(Usuario usuario) {
+        if (pausaDespacho != null) {
+            pausaDespacho.stop();
+        }
+        sistema.cancelarDespacho();
+
         boolean algunDisponible = false;
         boolean algunAlcanzable = false;
         for (int i = 0; i < sistema.totalVehiculos(); i++) {
@@ -179,27 +188,78 @@ public class DashboardController {
             return;
         }
 
-        Vehiculo aceptado = sistema.solicitarViaje(usuario, new Random());
-        if (aceptado == null) {
+        String colaTexto = sistema.obtenerTextoColaDespacho(usuario);
+        lblColaDespacho.setText(colaTexto);
+
+        sistema.iniciarDespacho(usuario, new Random());
+        if (sistema.getTotalCandidatosDespacho() == 0) {
             lblInfo.setText("No hay vehiculos disponibles\npara el usuario " + usuario.getId() + ".");
             return;
         }
 
-        double eta = sistema.calcularETA(aceptado.getNodoActual(), usuario.getNodoOrigen());
-        double distanciaKm = eta * (25.0 / 3.6) / 1000.0;
-        double tarifa = sistema.calcularTarifa(eta);
+        this.usuarioDespachando = usuario;
+        lblInfo.setText("Buscando conductor...\n(0/" + sistema.getTotalCandidatosDespacho() + ")");
+        pausaDespacho.play();
+    }
 
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Viaje asignado");
-        alert.setHeaderText("El vehiculo se dirige hacia el usuario");
-        alert.setContentText(String.format(
-                "Vehiculo: %s\nETA: %.0f segundos\nDistancia: %.2f km\nTarifa: $%.2f",
-                aceptado.getPatente(), eta, distanciaKm, tarifa));
-        alert.showAndWait();
+    /**
+     * Procesa el siguiente candidato en el despacho asincronico.
+     * Se ejecuta tras cada pausa de 1500ms. Si el vehiculo acepta muestra
+     * el dialogo de confirmacion; si rechaza y hay mas candidatos reinicia
+     * la pausa; si se agotaron los candidatos informa que no hay disponibles.
+     */
+    private void procesarSiguienteDespacho() {
+        int proc = sistema.getCandidatosProcesadosDespacho();
+        int total = sistema.getTotalCandidatosDespacho();
 
-        lblInfo.setText(String.format(
-                "Viaje asignado\nVehiculo: %s\nETA: %.0f s\nDist: %.2f km\nTarifa: $%.2f",
-                aceptado.getPatente(), eta, distanciaKm, tarifa));
+        Vehiculo aceptado = sistema.procesarSiguienteDespacho();
+
+        if (aceptado != null) {
+            lblColaDespacho.setText("");
+            double eta = sistema.calcularETA(aceptado.getNodoActual(), usuarioDespachando.getNodoOrigen());
+            double distanciaKm = eta * (25.0 / 3.6) / 1000.0;
+            double tarifa = sistema.calcularTarifa(eta);
+
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Viaje asignado");
+            alert.setHeaderText("El vehiculo se dirige hacia el usuario");
+            alert.setContentText(String.format(
+                    "Vehiculo: %s\nETA: %.0f segundos\nDistancia: %.2f km\nTarifa: $%.2f",
+                    aceptado.getPatente(), eta, distanciaKm, tarifa));
+            alert.showAndWait();
+
+            lblInfo.setText(String.format(
+                    "Viaje asignado\nVehiculo: %s\nETA: %.0f s\nDist: %.2f km\nTarifa: $%.2f",
+                    aceptado.getPatente(), eta, distanciaKm, tarifa));
+        } else if (sistema.hayDespachoActivo()) {
+            lblInfo.setText("Buscando conductor...\n(%d/%d)".formatted(proc, total));
+            actualizarTextoColaDespacho(proc);
+            pausaDespacho.playFromStart();
+        } else {
+            lblColaDespacho.setText("");
+            lblInfo.setText("No hay vehiculos disponibles\npara el usuario " + usuarioDespachando.getId() + ".");
+        }
+    }
+
+    private void actualizarTextoColaDespacho(int procesados) {
+        String actual = lblColaDespacho.getText();
+        if (actual == null || actual.isEmpty()) return;
+        String[] lineas = actual.split("\n");
+        StringBuilder sb = new StringBuilder(lineas[0]).append("\n");
+        for (int i = 1; i < lineas.length; i++) {
+            String linea = lineas[i];
+            int numOrden = i;
+            if (numOrden <= procesados) {
+                sb.append(linea).append("  ✗\n");
+            } else {
+                if (numOrden == procesados + 1) {
+                    sb.append("→ ").append(linea).append("  ← evaluando\n");
+                } else {
+                    sb.append("  ").append(linea).append("\n");
+                }
+            }
+        }
+        lblColaDespacho.setText(sb.toString());
     }
 
     /**
@@ -357,6 +417,9 @@ public class DashboardController {
             sistema = new SistemaViajes(grafoMapa, dijkstraRuteador);
             gestor = new GestorSimulacion(sistema, renderizadorMapa, grafoMapa, dijkstraRuteador);
 
+            pausaDespacho = new PauseTransition(Duration.millis(1500));
+            pausaDespacho.setOnFinished(evt -> procesarSiguienteDespacho());
+
             algoritmoSelector.getItems().addAll("Dijkstra", "Floyd-Warshall");
             algoritmoSelector.setValue("Dijkstra");
             algoritmoSelector.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> {
@@ -383,6 +446,10 @@ public class DashboardController {
             lblInfo.setWrapText(true);
             lblInfo.setStyle("-fx-font-size: 12;");
 
+            lblColaDespacho = new Label("");
+            lblColaDespacho.setWrapText(true);
+            lblColaDespacho.setStyle("-fx-font-size: 11; -fx-font-family: monospace;");
+
             lblBusyQueue = new Label("");
             lblBusyQueue.setWrapText(true);
             lblBusyQueue.setStyle("-fx-font-size: 11; -fx-font-family: monospace;");
@@ -393,7 +460,7 @@ public class DashboardController {
             busyScroll.setMaxHeight(250);
             busyScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
             busyScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-            sidePanel.getChildren().addAll(lblInfo, busyScroll);
+            sidePanel.getChildren().addAll(lblInfo, lblColaDespacho, busyScroll);
 
             Label sep = new Label("─────────────────");
             sep.setStyle("-fx-font-size: 10; -fx-text-fill: #ccc; -fx-padding: 4 0 0 0;");

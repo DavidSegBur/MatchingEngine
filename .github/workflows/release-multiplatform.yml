@@ -37,6 +37,17 @@ jobs:
         distribution: 'temurin'
         cache: maven
 
+    # Fix: Agregamos la propiedad para limpiar la versión y que sea compatible con Windows y Mac
+    - name: Build native installer (jlink + jpackage)
+      shell: bash
+      run: |
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          ./mvnw.cmd clean compile javafx:jlink jpackage:jpackage -Djavafx.version=21 -Djpackage.appVersion=1.0.0 -Dapp.version=1.0.0
+        else
+          chmod +x mvnw
+          ./mvnw clean compile javafx:jlink jpackage:jpackage -Djavafx.version=21 -Djpackage.appVersion=1.0.0 -Dapp.version=1.0.0
+        fi
+
     # Corregido: Distingue entre el script de Linux/Mac y el ejecutable .cmd de Windows
     - name: Build native installer (jlink + jpackage)
       shell: bash

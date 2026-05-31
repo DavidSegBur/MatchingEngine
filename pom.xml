@@ -94,7 +94,6 @@
                     <module>group20tup.matchingengine/group20tup.matchingengine.Main</module>
                     <type>${jpackage.type}</type>
                     <destination>${project.build.directory}/installer</destination>
-                    <icon>src/main/resources/group20tup/matchingengine/data/mapa.png</icon>
                 </configuration>
             </plugin>
         </plugins>

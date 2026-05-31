@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-installers:
     name: Build for ${{ matrix.os }}
@@ -35,7 +38,7 @@ jobs:
       shell: bash
       run: |
         chmod +x mvnw
-        ./mvnw clean compile javafx:jlink jpackage:jpackage -DskipTests
+        ./mvnw clean compile javafx:jlink jpackage:jpackage
 
     - name: Prepare artifact
       shell: bash

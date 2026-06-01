@@ -26,6 +26,14 @@ public class ColaPrioridadMonticulo {
     }
 
     /**
+     * Copia superficial de otra cola de prioridad.
+     * @param other Cola a copiar
+     */
+    public ColaPrioridadMonticulo(ColaPrioridadMonticulo other) {
+        this.heap = new MonticuloBinario(other.heap);
+    }
+
+    /**
      * Inserta un elemento con su prioridad en la cola.
      * @param elemento Indice del elemento a insertar
      * @param prioridad Valor de prioridad (menor = mayor prioridad)
@@ -59,11 +67,20 @@ public class ColaPrioridadMonticulo {
     }
 
     /**
-     * Elimina todos los elementos de la cola.
+     * Actualiza la prioridad de un elemento en la cola.
+     * Busca el elemento por su valor y reubica su posicion si la nueva
+     * prioridad es menor. No hace nada si el elemento no existe.
+     * @param elemento Indice del elemento a actualizar
+     * @param nuevaPrioridad Nueva prioridad (debe ser menor o igual)
+     */
+    public void actualizarPrioridad(int elemento, double nuevaPrioridad) {
+        heap.decreaseKey(elemento, nuevaPrioridad);
+    }
+
+    /**
+     * Elimina todos los elementos de la cola en O(1).
      */
     public void limpiar() {
-        while (!heap.estaVacia()) {
-            heap.extraerMin();
-        }
+        heap.reset();
     }
 }

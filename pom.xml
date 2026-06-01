@@ -12,6 +12,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.12.1</junit.version>
+        <jpackage.type>APP_IMAGE</jpackage.type>
     </properties>
 
     <dependencies>
@@ -26,11 +27,6 @@
             <version>21.0.6</version>
         </dependency>
         <dependency>
-            <groupId>org.controlsfx</groupId>
-            <artifactId>controlsfx</artifactId>
-            <version>11.2.1</version>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
@@ -39,6 +35,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
@@ -79,6 +81,20 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <configuration>
+                    <name>MatchingEngine</name>
+                    <appVersion>${project.version}</appVersion>
+                    <vendor>Group 20</vendor>
+                    <runtimeImage>${project.build.directory}/app</runtimeImage>
+                    <module>group20tup.matchingengine/group20tup.matchingengine.Main</module>
+                    <type>${jpackage.type}</type>
+                    <destination>${project.build.directory}/installer</destination>
+                </configuration>
             </plugin>
         </plugins>
     </build>

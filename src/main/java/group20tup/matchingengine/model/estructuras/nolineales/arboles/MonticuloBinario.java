@@ -26,6 +26,19 @@ public class MonticuloBinario {
     }
 
     /**
+     * Copia superficial de otro monticulo binario.
+     * @param other Monticulo a copiar
+     */
+    public MonticuloBinario(MonticuloBinario other) {
+        this.capacity = other.capacity;
+        this.size = other.size;
+        this.heap = new int[this.capacity];
+        this.prioridades = new double[this.capacity];
+        System.arraycopy(other.heap, 0, this.heap, 0, this.size);
+        System.arraycopy(other.prioridades, 0, this.prioridades, 0, this.size);
+    }
+
+    /**
      * Inserta un nodo con su prioridad en el monticulo.
      * 
      * @param nodo     Indice del nodo
@@ -37,8 +50,8 @@ public class MonticuloBinario {
             int newCapacity = capacity * 2;
             int[] newHeap = new int[newCapacity];
             double[] newPrioridades = new double[newCapacity];
-            System.arraycopy(heap, 0, newHeap, 0, capacity);
-            System.arraycopy(prioridades, 0, newPrioridades, 0, capacity);
+            System.arraycopy(heap, 0, newHeap, 0, size);
+            System.arraycopy(prioridades, 0, newPrioridades, 0, size);
             heap = newHeap;
             prioridades = newPrioridades;
             capacity = newCapacity;
@@ -90,6 +103,34 @@ public class MonticuloBinario {
      */
     public int tamanio() {
         return size;
+    }
+
+    /**
+     * Actualiza la prioridad de un elemento en el monticulo (solo decrementos).
+     * Busca linealmente el elemento por su valor, actualiza su prioridad y
+     * lo reubica hacia arriba para mantener la propiedad del monticulo.
+     * Si el elemento no existe o la nueva prioridad es mayor, no hace nada.
+     * @param valor Valor del elemento a actualizar
+     * @param nuevaPrioridad Nueva prioridad (debe ser menor o igual a la actual)
+     */
+    public void decreaseKey(int valor, double nuevaPrioridad) {
+        for (int i = 0; i < size; i++) {
+            if (heap[i] == valor) {
+                if (nuevaPrioridad < prioridades[i]) {
+                    prioridades[i] = nuevaPrioridad;
+                    subir(i);
+                }
+                return;
+            }
+        }
+    }
+
+    /**
+     * Reinicia el monticulo eliminando todos los elementos en O(1).
+     * Los arreglos subyacentes se reutilizan (se reescribiran al insertar).
+     */
+    public void reset() {
+        size = 0;
     }
 
     /**

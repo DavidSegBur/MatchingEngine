@@ -22,7 +22,7 @@ public class FloydWarshallRutas implements CalculadorRutas {
 
     /**
      * Construye el calculador de Floyd-Warshall para un grafo.
-     * Precalcula los caminos mas cortos de todos los pares en el tiempo O(n²)
+     * Precalcula los caminos mas cortos de todos los pares en el tiempo O(n³)
      * 
      * @param grafo El grafo dirigido a procesar
      */
@@ -31,7 +31,7 @@ public class FloydWarshallRutas implements CalculadorRutas {
         this.costos = new double[n][n];
         this.siguiente = new int[n][n];
         
-        // Incializa las matrices de costo y siguiente
+        // Inicializa las matrices de costo y siguiente
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 costos[i][j] = grafo.getMatrizCosto().devolver(i, j);
@@ -60,7 +60,7 @@ public class FloydWarshallRutas implements CalculadorRutas {
 
     /**
      * Calcula el camino mas corto desde el origen al destino.
-     * La reconsruccion del camino es O(L) donde L es el tamaño del camino
+     * La reconstruccion del camino es O(L) donde L es el tamaño del camino
      * 
      * @param origen  Indice del nodo de Origen
      * @param destino Indice del nodo de destino
@@ -72,21 +72,21 @@ public class FloydWarshallRutas implements CalculadorRutas {
             return new int[0]; // No path
         }
         
-        // First, compute path length
+        int n = siguiente.length;
+        int[] temp = new int[n];
         int length = 0;
-        for (int v = origen; v != destino; v = siguiente[v][destino]) {
-            length++;
+        int v = origen;
+        for (int iter = 0; v != destino && iter < n; iter++) {
+            temp[length++] = v;
+            v = siguiente[v][destino];
         }
-        length++; // Include destination
+        if (v != destino) {
+            return new int[0]; // Cycle or corrupted siguiente matrix
+        }
+        temp[length++] = destino;
         
-        // Build path
         int[] path = new int[length];
-        int pos = 0;
-        for (int v = origen; v != destino; v = siguiente[v][destino]) {
-            path[pos++] = v;
-        }
-        path[pos] = destino;
-        
+        System.arraycopy(temp, 0, path, 0, length);
         return path;
     }
 }

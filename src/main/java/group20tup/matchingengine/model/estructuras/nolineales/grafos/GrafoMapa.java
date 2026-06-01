@@ -7,8 +7,6 @@ import group20tup.matchingengine.model.recursos.MetadataNodo;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -27,6 +25,11 @@ public class GrafoMapa extends GrafoDirigido {
             "/group20tup/matchingengine/data/meta_datos_nodos_2k.csv";
     private static final String RUTA_MATRIZ =
             "/group20tup/matchingengine/data/matriz_nodos_2k.csv";
+    /**
+     * Velocidad promedio de desplazamiento en metros por segundo.
+     * Equivale a 25 km/h convertido a m/s (25 / 3.6).
+     */
+    public static final double VELOCIDAD_PROMEDIO_M_S = 25.0 / 3.6;
 
     private ListaDoubleLinkedL listaEsquinas;
     private long[] mapeoIndicesAIdOSM;
@@ -74,24 +77,31 @@ public class GrafoMapa extends GrafoDirigido {
             throw new IllegalArgumentException("No se encontro el archivo de metadatos en: " + RUTA_METADATOS);
         }
 
-        List<String> lineas = new ArrayList<>();
+        // Single pass: collect lines into a dynamically grown array
+        String[] lineas = new String[256];
+        int total = 0;
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            br.readLine();
+            br.readLine(); // skip header
             String linea;
             while ((linea = br.readLine()) != null) {
                 if (!linea.trim().isEmpty()) {
-                    lineas.add(linea);
+                    if (total >= lineas.length) {
+                        String[] nuevo = new String[lineas.length * 2];
+                        System.arraycopy(lineas, 0, nuevo, 0, lineas.length);
+                        lineas = nuevo;
+                    }
+                    lineas[total++] = linea;
                 }
             }
         } catch (Exception ex) {
-            System.err.println("No se pudo encontrar el archivo para cargar los metadatos: " + ex.getMessage());
+            throw new IllegalArgumentException("Error al leer metadatos: " + ex.getMessage(), ex);
         }
 
-        this.mapeoIndicesAIdOSM = new long[lineas.size()];
+        this.mapeoIndicesAIdOSM = new long[total];
 
         int contadorSecuencial = 0;
-        for (String linea : lineas) {
-            String[] campos = linea.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+        for (int i = 0; i < total; i++) {
+            String[] campos = lineas[i].split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
             if (campos.length >= 6) {
                 long idOSM = Long.parseLong(campos[0].trim());
                 double latitud = Double.parseDouble(campos[1].trim());
@@ -128,7 +138,7 @@ public class GrafoMapa extends GrafoDirigido {
             br.readLine();
             String linea;
             int filaInterna = 0;
-            final double VELOCIDAD_METROS_POR_SEGUNDO = 25.0 / 3.6;
+            final double VELOCIDAD_METROS_POR_SEGUNDO = VELOCIDAD_PROMEDIO_M_S;
 
             while ((linea = br.readLine()) != null) {
                 if (linea.trim().isEmpty()) {
@@ -143,7 +153,9 @@ public class GrafoMapa extends GrafoDirigido {
 
                     int valorCelda = Integer.parseInt(valores[columnaInterna + 1].trim());
 
-                    if (valorCelda == 1 && filaInterna != columnaInterna) {
+                    if (filaInterna == columnaInterna) {
+                        this.matrizCosto.actualizar(0.0, filaInterna, columnaInterna);
+                    } else if (valorCelda == 1) {
                         MetadataNodo nodoOrigen = (MetadataNodo) this.listaEsquinas.devolver(filaInterna);
                         MetadataNodo nodoDestino = (MetadataNodo) this.listaEsquinas.devolver(columnaInterna);
 
@@ -167,6 +179,15 @@ public class GrafoMapa extends GrafoDirigido {
         }
     }
 
+    /**
+     * Calcula la distancia en kilometros entre dos coordenadas geograficas
+     * usando la formula del haversine.
+     * @param lat1 Latitud del punto de origen en grados
+     * @param lon1 Longitud del punto de origen en grados
+     * @param lat2 Latitud del punto de destino en grados
+     * @param lon2 Longitud del punto de destino en grados
+     * @return Distancia en kilometros
+     */
     private double calcularHaversine(double lat1, double lon1, double lat2, double lon2) {
         final double RADIO_TIERRA_METROS = 6371000.0;
         double dLat = Math.toRadians(lat2 - lat1);

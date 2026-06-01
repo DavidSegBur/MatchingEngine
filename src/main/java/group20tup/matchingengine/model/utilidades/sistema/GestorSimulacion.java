@@ -1,30 +1,29 @@
 package group20tup.matchingengine.model.utilidades.sistema;
 
+import group20tup.matchingengine.model.estructuras.lineales.matrices.MatrizGrafo;
 import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
+import group20tup.matchingengine.model.utilidades.CalculadorRutas;
 import group20tup.matchingengine.view.MapCanvas;
-import javafx.animation.AnimationTimer;
 import java.util.Random;
 
 /**
  * Motor de simulacion en tiempo real del sistema de flota de vehiculos.
  * <p>
- *     Gestiona el ciclo principal de la simulacion mediante un
- *     {@code AnimationTimer} que ejecuta pasos discretos a intervalos
- *     regulares. Mantiene una densidad constante de usuarios y vehiculos,
- *     controla el desplazamiento autonomo (roaming) de los vehiculos
- *     disponibles, avanza los vehiculos que siguen rutas activas,
- *     detecta eventos de recogida y finalizacion de viajes, y actualiza
- *     el renderizado del mapa en cada tick.
+ *     Gestiona el ciclo principal de la simulacion. Mantiene una densidad
+ *     constante de usuarios y vehiculos, controla el desplazamiento autonomo
+ *     (roaming) de los vehiculos disponibles, avanza los vehiculos que siguen
+ *     rutas activas, detecta eventos de recogida y finalizacion de viajes, y
+ *     actualiza el renderizado del mapa en cada tick. No depende de JavaFX
+ *     directamente; el bucle de animacion es gestionado externamente por
+ *     un adaptador.
  * </p>
  * @author Ivan
- * @version 1.0
+ * @version 2.0
  */
-public class GestorSimulacion {
-    private static final long INTERVALO_TICK = 350_000_000;
-    private static final double PASO_INTERPOLACION = 0.33;
+public class GestorSimulacion implements MotorSimulacion {
     private static final int USUARIOS_OBJETIVO = 5;
     private static final int VEHICULOS_MIN = 10;
     private static final int VEHICULOS_MAX = 15;
@@ -32,9 +31,8 @@ public class GestorSimulacion {
     private final SistemaViajes sistema;
     private final MapCanvas renderizador;
     private final GrafoMapa grafo;
+    private CalculadorRutas ruteador;
     private final Random rnd;
-    private final AnimationTimer timer;
-    private long ultimoTick;
     private int contadorUsuarios;
     private int contadorVehiculos;
 
@@ -44,33 +42,33 @@ public class GestorSimulacion {
      * @param renderizador Renderizador del mapa para actualizar la vista
      * @param grafo Grafo vial de la ciudad para consultas de conectividad
      */
-    public GestorSimulacion(SistemaViajes sistema, MapCanvas renderizador, GrafoMapa grafo) {
+    public GestorSimulacion(SistemaViajes sistema, MapCanvas renderizador, GrafoMapa grafo, CalculadorRutas ruteador) {
         this.sistema = sistema;
         this.renderizador = renderizador;
         this.grafo = grafo;
+        this.ruteador = ruteador;
         this.rnd = new Random();
-        this.ultimoTick = 0;
         this.contadorUsuarios = 0;
         this.contadorVehiculos = 0;
-        this.timer = new AnimationTimer() {
-            @Override
-            public void handle(long now) {
-                if (now - ultimoTick >= INTERVALO_TICK) {
-                    tick();
-                    ultimoTick = now;
-                }
-            }
-        };
     }
 
     /**
-     * Inicia la simulacion creando las entidades iniciales y arrancando el timer.
+     * Cambia el algoritmo de ruteo usado por el gestor de simulacion.
+     * @param ruteador Nueva instancia del algoritmo de ruteo
+     */
+    public void setRuteador(CalculadorRutas ruteador) {
+        this.ruteador = ruteador;
+    }
+
+    /**
+     * Crea las entidades iniciales de la simulacion y renderiza el frame inicial.
      * <p>
-     *     Crea 5 usuarios y 10 vehiculos ubicados aleatoriamente en el grafo,
-     *     renderiza el mapa inicial y comienza el bucle de simulacion.
+     *     Crea 5 usuarios y 10 vehiculos ubicados aleatoriamente en el grafo
+     *     y renderiza el mapa inicial. No inicia el bucle de animacion;
+     *     eso debe hacerlo el adaptador externo.
      * </p>
      */
-    public void iniciar() {
+    public void inicializarEntidades() {
         for (int i = 0; i < USUARIOS_OBJETIVO; i++) {
             crearUsuario();
         }
@@ -78,7 +76,6 @@ public class GestorSimulacion {
             crearVehiculo();
         }
         renderizarFrame();
-        timer.start();
     }
 
     /**
@@ -88,7 +85,9 @@ public class GestorSimulacion {
      *     completo (por ejemplo al redimensionar la ventana).
      * </p>
      */
+    @Override
     public void renderizarFrame() {
+        if (renderizador == null) return;
         renderizador.redibujar();
 
         for (int i = 0; i < sistema.totalVehiculos(); i++) {
@@ -107,45 +106,110 @@ public class GestorSimulacion {
      * <p>
      *     En cada tick: desplaza los vehiculos disponibles (roaming) y los que
      *     siguen rutas activas, procesa los eventos de llegada (pickup y
-     *     finalizacion de viaje), mantiene la densidad objetivo de entidades
-     *     y actualiza el renderizado del mapa.
+     *     finalizacion de viaje) y mantiene la densidad objetivo de entidades.
      * </p>
      */
-    private void tick() {
+    @Override
+    public void tick() {
         for (int i = 0; i < sistema.totalVehiculos(); i++) {
             Vehiculo v = sistema.getVehiculo(i);
             int[] ruta = v.getRutaActiva();
 
             if (v.isDisponible() && (ruta.length == 0 || estaEnDestino(v))) {
-                int destino = sistema.encontrarDestinoAleatorio(v.getNodoActual());
-                if (destino != -1) {
-                    v.setRutaActiva(new int[]{v.getNodoActual(), destino});
+                int vecino = obtenerVecinoAleatorio(v.getNodoActual());
+                if (vecino != -1) {
+                    v.setRutaActiva(new int[]{v.getNodoActual(), vecino});
+                } else {
+                    int nodo = -1;
+                    MatrizGrafo matriz = grafo.getMatrizCosto();
+                    for (int intentos = 0; intentos < 50; intentos++) {
+                        int candidato = rnd.nextInt(grafo.getOrden());
+                        if (candidato != v.getNodoActual() && matriz.areConnected(v.getNodoActual(), candidato)) {
+                            nodo = candidato;
+                            break;
+                        }
+                    }
+                    if (nodo != -1) {
+                        v.setRutaActiva(new int[]{v.getNodoActual(), nodo});
+                    }
                 }
             }
 
             avanzarProgreso(v);
+
+            if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
+                double etaRestante = sistema.calcularRestanteETA(i);
+                sistema.actualizarPrioridadOcupado(i, etaRestante);
+            }
         }
 
         procesarArribos();
         mantenerDensidad();
-        renderizarFrame();
     }
 
+    /**
+     * Obtiene un vecino aleatorio alcanzable desde el nodo dado,
+     * respetando las restricciones de sentido unico del grafo dirigido.
+     * @param nodo Nodo de origen
+     * @return Indice de un nodo vecino valido, o -1 si no existe ninguna arista saliente
+     */
+    private int obtenerVecinoAleatorio(int nodo) {
+        int orden = grafo.getOrden();
+        MatrizGrafo matriz = grafo.getMatrizCosto();
+        int count = 0;
+        for (int j = 0; j < orden; j++) {
+            if (j != nodo && matriz.areConnected(nodo, j)) {
+                count++;
+            }
+        }
+        if (count == 0) return -1;
+        int target = rnd.nextInt(count);
+        for (int j = 0; j < orden; j++) {
+            if (j != nodo && matriz.areConnected(nodo, j)) {
+                if (target == 0) return j;
+                target--;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Verifica si el vehiculo ha llegado al nodo destino de su ruta actual.
+     * @param v Vehiculo a verificar
+     * @return true si el vehiculo esta en el ultimo nodo de su ruta
+     */
     private boolean estaEnDestino(Vehiculo v) {
         return v.getIndiceRuta() >= v.getRutaActiva().length - 1 && v.getProgreso() >= 1.0;
     }
 
+    /**
+     * Avanza el vehiculo a lo largo de su ruta activa de forma proporcional
+     * al peso (ETA) de cada arista.
+     * <p>
+     *     El avance por tick es {@code 1.0 / pesoArista}, de modo que
+     *     una arista con ETA de N segundos requiere exactamente N ticks
+     *     en atravesarse. Si la ruta esta vacia o ya llego al destino,
+     *     se detiene sin avanzar.
+     * </p>
+     * @param v Vehiculo cuyo progreso se avanza
+     */
     private void avanzarProgreso(Vehiculo v) {
         int[] ruta = v.getRutaActiva();
         if (ruta.length < 2) return;
 
-        double p = v.getProgreso() + PASO_INTERPOLACION;
+        int idx = v.getIndiceRuta();
+        if (idx >= ruta.length - 1) return;
+
+        double peso = grafo.getMatrizCosto().devolver(ruta[idx], ruta[idx + 1]);
+        if (peso <= 0 || peso >= Double.POSITIVE_INFINITY) return;
+
+        double p = v.getProgreso() + 1.0 / peso;
         if (p >= 1.0) {
-            int idx = v.getIndiceRuta() + 1;
-            if (idx < ruta.length - 1) {
-                v.setNodoAnterior(ruta[idx]);
-                v.setNodoActual(ruta[idx + 1]);
-                v.setIndiceRuta(idx);
+            int siguiente = idx + 1;
+            if (siguiente < ruta.length - 1) {
+                v.setNodoAnterior(ruta[siguiente]);
+                v.setNodoActual(ruta[siguiente + 1]);
+                v.setIndiceRuta(siguiente);
                 v.setProgreso(0.0);
             } else {
                 v.setIndiceRuta(ruta.length - 1);
@@ -167,16 +231,22 @@ public class GestorSimulacion {
      * </p>
      */
     private void procesarArribos() {
-        for (int i = 0; i < sistema.totalVehiculos(); i++) {
+        for (int i = sistema.totalVehiculos() - 1; i >= 0; i--) {
             Vehiculo v = sistema.getVehiculo(i);
             int[] ruta = v.getRutaActiva();
             if (ruta.length == 0) continue;
 
             if (v.getIndiceRuta() >= ruta.length - 1 && v.getProgreso() >= 1.0) {
                 if (v.getEstado() == EstadoVehiculo.APROXIMANDO) {
-                    sistema.realizarPickup(v);
-                    System.out.println("[Pickup] Vehiculo " + v.getPatente()
-                            + " recolecto usuario. Dirigiendose a destino aleatorio.");
+                    if (!sistema.realizarPickup(v)) {
+                        sistema.removerVehiculo(v);
+                        sistema.reconstruirColaOcupados();
+                        System.out.println("[Pickup] Vehiculo " + v.getPatente()
+                                + " no encontro destino alcanzable. Reemplazado.");
+                    } else {
+                        System.out.println("[Pickup] Vehiculo " + v.getPatente()
+                                + " recolecto usuario. Dirigiendose a destino aleatorio.");
+                    }
                 } else if (v.getEstado() == EstadoVehiculo.EN_VIAJE) {
                     sistema.completarTransito(v);
                     System.out.println("[Completado] Vehiculo " + v.getPatente()
@@ -197,7 +267,7 @@ public class GestorSimulacion {
         while (sistema.totalUsuarios() < USUARIOS_OBJETIVO) {
             crearUsuario();
         }
-        while (sistema.totalVehiculos() < VEHICULOS_MIN) {
+        while (sistema.totalVehiculos() < VEHICULOS_MIN && sistema.totalVehiculos() < VEHICULOS_MAX) {
             crearVehiculo();
         }
     }
@@ -224,3 +294,4 @@ public class GestorSimulacion {
         sistema.registrarVehiculo(v);
     }
 }
+

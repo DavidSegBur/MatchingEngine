@@ -3,6 +3,7 @@ package group20tup.matchingengine.model.utilidades.sistema;
 import group20tup.matchingengine.model.estructuras.lineales.listas.ListaDoubleLinkedL;
 import group20tup.matchingengine.model.estructuras.lineales.colas.ColaPrioridadMonticulo;
 import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoDirigido;
+import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
@@ -28,13 +29,20 @@ public class SistemaViajes {
     private static final double INFINITO = Double.POSITIVE_INFINITY;
     private static final double PROBABILIDAD_RECHAZO = 0.3;
     private static final double TARIFA_POR_KM = 0.50;
-    private static final double VELOCIDAD_PROMEDIO_M_S = 25.0 / 3.6;
 
     private final GrafoDirigido grafo;
-    private final CalculadorRutas ruteador;
+    private CalculadorRutas ruteador;
     private final ListaDoubleLinkedL vehiculos;
     private final ListaDoubleLinkedL usuarios;
     private final ColaPrioridadMonticulo colaOcupados;
+    private final EstadisticasSimulacion estadisticas;
+
+    private ColaPrioridadMonticulo colaDespachoActiva;
+    private boolean despachoEnCurso;
+    private int totalCandidatos;
+    private int candidatosProcesados;
+    private Random rndDespacho;
+    private Usuario usuarioDespachando;
 
     /**
      * Construye el sistema de viajes con el grafo y el ruteador dados.
@@ -47,6 +55,23 @@ public class SistemaViajes {
         this.vehiculos = new ListaDoubleLinkedL();
         this.usuarios = new ListaDoubleLinkedL();
         this.colaOcupados = new ColaPrioridadMonticulo(20);
+        this.estadisticas = new EstadisticasSimulacion();
+    }
+
+    /**
+     * Cambia el algoritmo de ruteo en tiempo de ejecucion.
+     * @param ruteador Nueva instancia del algoritmo de ruteo
+     */
+    public void setRuteador(CalculadorRutas ruteador) {
+        this.ruteador = ruteador;
+    }
+
+    /**
+     * Devuelve el algoritmo de ruteo actual.
+     * @return Instancia actual del calculador de rutas
+     */
+    public CalculadorRutas getRuteador() {
+        return ruteador;
     }
 
     /**
@@ -117,10 +142,202 @@ public class SistemaViajes {
 
     /**
      * Devuelve la cola de prioridad de vehiculos ocupados.
-     * @return ColaPrioridadMonticulo con vehiculos en estado EN_VIAJE
+     * @return ColaPrioridadMonticulo con vehiculos en estado APROXIMANDO o EN_VIAJE
      */
     public ColaPrioridadMonticulo getColaOcupados() {
-        return colaOcupados;
+        return new ColaPrioridadMonticulo(colaOcupados);
+    }
+
+    /**
+     * Devuelve el registro de estadisticas de la simulacion.
+     * @return Instancia de EstadisticasSimulacion con los contadores acumulados
+     */
+    public EstadisticasSimulacion getEstadisticas() {
+        return estadisticas;
+    }
+
+    /**
+     * Indica si hay un proceso de despacho asincronico en curso.
+     * @return true si se inicio un despacho y aun no finalizo
+     */
+    public boolean hayDespachoActivo() {
+        return despachoEnCurso;
+    }
+
+    /**
+     * Devuelve la cantidad total de candidatos en el despacho actual.
+     * @return Total de vehiculos elegibles al iniciar el despacho
+     */
+    public int getTotalCandidatosDespacho() {
+        return totalCandidatos;
+    }
+
+    /**
+     * Devuelve cuantos candidatos se han procesado hasta ahora.
+     * @return Cantidad de candidatos evaluados
+     */
+    public int getCandidatosProcesadosDespacho() {
+        return candidatosProcesados;
+    }
+
+    /**
+     * Inicia un proceso de despacho asincronico para un usuario.
+     * <p>
+     *     Crea la cola de prioridad con los vehiculos disponibles ordenados
+     *     por ETA al nodo del usuario. Si ya habia un despacho en curso lo
+     *     cancela primero. Este metodo no bloquea: el llamador debe invocar
+     *     {@link #procesarSiguienteDespacho()} repetidamente con pausas entre
+     *     cada intento.
+     * </p>
+     * @param usuario Usuario que solicita el viaje
+     * @param rnd Generador aleatorio para simulacion de rechazo (null = sin rechazo)
+     */
+    public void iniciarDespacho(Usuario usuario, Random rnd) {
+        estadisticas.registrarSolicitud();
+        if (despachoEnCurso) {
+            cancelarDespacho();
+        }
+
+        colaDespachoActiva = construirColaDespacho(usuario);
+        despachoEnCurso = true;
+        totalCandidatos = colaDespachoActiva.tamanio();
+        candidatosProcesados = 0;
+        this.rndDespacho = rnd;
+        this.usuarioDespachando = usuario;
+    }
+
+    /**
+     * Procesa el siguiente candidato en el despacho asincronico actual.
+     * <p>
+     *     Extrae el vehiculo con menor ETA de la cola de despacho. Si el
+     *     vehiculo ya no esta disponible (ej. fue asignado por otro proceso)
+     *     o rechaza el viaje, retorna {@code null} pero mantiene el despacho
+     *     activo ({@link #hayDespachoActivo()} = true) para que el llamador
+     *     reintente. Si acepta, retorna el vehiculo y finaliza el despacho.
+     *     Si la cola se agota, retorna {@code null} y finaliza el despacho.
+     * </p>
+     * @return El vehiculo que acepto el viaje, o null si rechazo o no hay mas
+     */
+    public Vehiculo procesarSiguienteDespacho() {
+        if (!despachoEnCurso || colaDespachoActiva == null || colaDespachoActiva.estaVacia()) {
+            despachoEnCurso = false;
+            return null;
+        }
+
+        int idxVehiculo = colaDespachoActiva.extraerMin();
+        Vehiculo candidato = (Vehiculo) vehiculos.devolver(idxVehiculo);
+        candidatosProcesados++;
+
+        long DESTACADO_DURACION_NANOS = 800_000_000L;
+        candidato.setDestacadoHasta(System.nanoTime() + DESTACADO_DURACION_NANOS);
+
+        if (!candidato.isDisponible()) {
+            return null;
+        }
+
+        if (rndDespacho != null && rndDespacho.nextDouble() < PROBABILIDAD_RECHAZO) {
+            estadisticas.registrarViajeRechazado();
+            return null;
+        }
+
+        boolean aceptado = aceptarViaje(candidato, usuarioDespachando);
+        if (!aceptado) {
+            return null;
+        }
+        despachoEnCurso = false;
+        return candidato;
+    }
+
+    /**
+     * Cancela el proceso de despacho asincronico en curso.
+     * <p>
+     *     Reinicia todos los campos de estado del despacho para que
+     *     el sistema quede limpio para una nueva solicitud.
+     * </p>
+     */
+    public void cancelarDespacho() {
+        despachoEnCurso = false;
+        this.rndDespacho = null;
+        this.usuarioDespachando = null;
+        this.colaDespachoActiva = null;
+    }
+
+    /**
+     * Genera un texto formateado con la cola de despacho ordenada por ETA.
+     * <p>
+     *     Escanea todos los vehiculos disponibles, calcula su ETA al nodo
+     *     del usuario, ordena por ETA ascendente (mas cercano primero) y
+     *     devuelve un texto formato lista numerada con patente y ETA.
+     * </p>
+     * @param usuario Usuario destino para calcular ETA
+     * @return String con la cola formateada, o "(sin candidatos)" si no hay
+     */
+    private ColaPrioridadMonticulo construirColaDespacho(Usuario usuario) {
+        ColaPrioridadMonticulo cola = new ColaPrioridadMonticulo(vehiculos.tamanio());
+        for (int i = 0; i < vehiculos.tamanio(); i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
+            if (v.isDisponible()) {
+                double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
+                if (eta < INFINITO) {
+                    cola.insertar(i, eta);
+                }
+            }
+        }
+        return cola;
+    }
+
+    /**
+     * Genera el texto formateado de la cola de despacho para la UI.
+     * <p>
+     *     Construye la cola de candidatos ordenados por ETA ascendente y
+     *     genera un listado numerado con patente y tiempo estimado de cada
+     *     vehiculo disponible.
+     * </p>
+     * @param usuario Usuario solicitante del viaje
+     * @return Texto con el listado de vehiculos candidatos ordenados,
+     *         o "(sin candidatos)" si no hay vehiculos disponibles
+     */
+    public String obtenerTextoColaDespacho(Usuario usuario) {
+        ColaPrioridadMonticulo cola = construirColaDespacho(usuario);
+        if (cola.estaVacia()) return "(sin candidatos)";
+
+        StringBuilder sb = new StringBuilder("── Cola de despacho ──\n");
+        int count = 0;
+        while (!cola.estaVacia()) {
+            int idx = cola.extraerMin();
+            Vehiculo v = (Vehiculo) vehiculos.devolver(idx);
+            double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
+            sb.append(String.format("%d. %s — %.0fs\n", ++count, v.getPatente(), eta));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Genera el texto formateado de los candidatos restantes en la cola de
+     * despacho activa, excluyendo los vehiculos que ya fueron procesados
+     * (aceptaron o rechazaron).
+     * <p>
+     *     Copia la cola de despacho activa actual y la drena para producir
+     *     un listado numerado con patente y ETA de los vehiculos aun en
+     *     espera de ser evaluados.
+     * </p>
+     * @return Texto con el listado de vehiculos candidatos restantes ordenados
+     *         por ETA, o "(sin candidatos)" si no quedan candidatos
+     */
+    public String obtenerTextoColaDespachoRestante() {
+        if (colaDespachoActiva == null || colaDespachoActiva.estaVacia()) {
+            return "(sin candidatos)";
+        }
+        ColaPrioridadMonticulo copia = new ColaPrioridadMonticulo(colaDespachoActiva);
+        StringBuilder sb = new StringBuilder("── Cola de despacho ──\n");
+        int count = 0;
+        while (!copia.estaVacia()) {
+            int idx = copia.extraerMin();
+            Vehiculo v = (Vehiculo) vehiculos.devolver(idx);
+            double eta = calcularETA(v.getNodoActual(), usuarioDespachando.getNodoOrigen());
+            sb.append(String.format("%d. %s — %.0fs\n", ++count, v.getPatente(), eta));
+        }
+        return sb.toString();
     }
 
     /**
@@ -153,15 +370,8 @@ public class SistemaViajes {
      * @return El vehiculo que acepto el viaje, o null si ninguno acepto
      */
     public Vehiculo solicitarViaje(Usuario usuario, Random rnd) {
-        ColaPrioridadMonticulo colaDespacho = new ColaPrioridadMonticulo(vehiculos.tamanio());
-
-        for (int i = 0; i < vehiculos.tamanio(); i++) {
-            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
-            if (v.isDisponible()) {
-                double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
-                colaDespacho.insertar(i, eta);
-            }
-        }
+        estadisticas.registrarSolicitud();
+        ColaPrioridadMonticulo colaDespacho = construirColaDespacho(usuario);
 
         while (!colaDespacho.estaVacia()) {
             int idxVehiculo = colaDespacho.extraerMin();
@@ -169,9 +379,12 @@ public class SistemaViajes {
 
             if (candidato.isDisponible()) {
                 if (rnd != null && rnd.nextDouble() < PROBABILIDAD_RECHAZO) {
+                    estadisticas.registrarViajeRechazado();
                     continue;
                 }
-                aceptarViaje(candidato, usuario);
+                if (!aceptarViaje(candidato, usuario)) {
+                    continue;
+                }
                 return candidato;
             }
         }
@@ -209,7 +422,7 @@ public class SistemaViajes {
      */
     public double calcularTarifa(double etaSegundos) {
         if (etaSegundos >= INFINITO) return 0;
-        double distanciaKm = etaSegundos * VELOCIDAD_PROMEDIO_M_S / 1000.0;
+        double distanciaKm = etaSegundos * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
         return distanciaKm * TARIFA_POR_KM;
     }
 
@@ -225,40 +438,55 @@ public class SistemaViajes {
     }
 
     /**
+     * Elimina un vehiculo del sistema (ej. cuando queda en un estado no recuperable).
+     * @param v Vehiculo a eliminar
+     */
+    public void removerVehiculo(Vehiculo v) {
+        int idx = buscarIndiceVehiculo(v);
+        if (idx != -1) {
+            vehiculos.eliminar(idx);
+        }
+    }
+
+    /**
      * Ejecuta la recogida de un pasajero cuando el vehiculo llega a su ubicacion.
      * <p>
-     *     Remueve al usuario del mapa, cambia el estado del vehiculo a EN_VIAJE,
-     *     selecciona un destino aleatorio en el grafo, calcula la ruta correspondiente
-     *     y registra el vehiculo en la cola de ocupados con su ETA como prioridad.
+     *     Primero busca un destino aleatorio alcanzable mediante Dijkstra.
+     *     Si encuentra uno, remueve al usuario del mapa, cambia el estado del
+     *     vehiculo a EN_VIAJE, asigna la ruta calculada y registra el vehiculo
+     *     en la cola de ocupados. Si no encuentra un destino alcanzable tras
+     *     100 intentos, remueve al usuario igualmente pero retorna {@code false}
+     *     para que el llamador maneje la situacion.
      * </p>
      * @param vehiculo Vehiculo que realizo la recogida
+     * @return true si se encontro un destino y el viaje continua, false en caso contrario
      */
-    public void realizarPickup(Vehiculo vehiculo) {
+    public boolean realizarPickup(Vehiculo vehiculo) {
+        Random rnd = new Random();
+        int destino;
+        int[] ruta = new int[0];
+        for (int intentos = 0; intentos < 100 && ruta.length < 2; intentos++) {
+            destino = rnd.nextInt(grafo.getOrden());
+            if (destino != vehiculo.getNodoActual()) {
+                ruta = ruteador.calcularRuta(vehiculo.getNodoActual(), destino);
+            }
+        }
+
         Usuario usuario = vehiculo.getPasajeroAbordo();
         if (usuario != null) {
             removerUsuario(usuario);
         }
 
-        vehiculo.setEstado(EstadoVehiculo.EN_VIAJE);
-
-        Random rnd = new Random();
-        int destino;
-        do {
-            destino = rnd.nextInt(grafo.getOrden());
-        } while (destino == vehiculo.getNodoActual());
-
-        int[] ruta = ruteador.calcularRuta(vehiculo.getNodoActual(), destino);
-        vehiculo.setRutaActiva(ruta);
-
-        if (ruta.length > 0) {
-            double eta = 0;
-            for (int i = 0; i < ruta.length - 1; i++) {
-                eta += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
-            }
-            int idx = buscarIndiceVehiculo(vehiculo);
-            if (idx != -1) {
-                colaOcupados.insertar(idx, eta);
-            }
+        if (ruta.length >= 2) {
+            vehiculo.setEstado(EstadoVehiculo.EN_VIAJE);
+            vehiculo.setRutaActiva(ruta);
+            reconstruirColaOcupados();
+            return true;
+        } else {
+            vehiculo.setEstado(EstadoVehiculo.DISPONIBLE);
+            vehiculo.setPasajeroAbordo(null);
+            vehiculo.setRutaActiva(new int[0]);
+            return false;
         }
     }
 
@@ -271,6 +499,15 @@ public class SistemaViajes {
      * @param vehiculo Vehiculo que completo el viaje
      */
     public void completarTransito(Vehiculo vehiculo) {
+        double etaTotal = 0;
+        int[] ruta = vehiculo.getRutaActiva();
+        for (int i = 0; i < ruta.length - 1; i++) {
+            etaTotal += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
+        }
+        double distanciaKm = etaTotal * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
+        double tarifa = calcularTarifa(etaTotal);
+        estadisticas.registrarViajeCompletado(etaTotal, tarifa, distanciaKm);
+
         vehiculo.setEstado(EstadoVehiculo.DISPONIBLE);
         vehiculo.setPasajeroAbordo(null);
         vehiculo.setRutaActiva(new int[0]);
@@ -279,25 +516,95 @@ public class SistemaViajes {
     }
 
     /**
-     * Reconstruye la cola de ocupados desde cero.
+     * Reconstruye la cola de ocupados desde cero con ETA restante actual.
      * <p>
-     *     Se invoca tras finalizar un viaje para mantener la cola sincronizada
-     *     con los vehiculos actualmente en estado EN_VIAJE.
+     *     Se invoca tras finalizar un viaje o antes de inspeccionar la cola
+     *     para mantener las prioridades sincronizadas con el progreso actual
+     *     de cada vehiculo.
      * </p>
      */
-    private void reconstruirColaOcupados() {
+    public void reconstruirColaOcupados() {
         colaOcupados.limpiar();
         for (int i = 0; i < vehiculos.tamanio(); i++) {
             Vehiculo v = (Vehiculo) vehiculos.devolver(i);
-            if (v.getEstado() == EstadoVehiculo.EN_VIAJE) {
-                double eta = 0;
-                int[] ruta = v.getRutaActiva();
-                for (int j = 0; j < ruta.length - 1; j++) {
-                    eta += grafo.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
-                }
+            if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
+                double eta = calcularRestanteETA(i);
                 colaOcupados.insertar(i, eta);
             }
         }
+    }
+
+    /**
+     * Devuelve el texto formateado de la cola de ocupados para la UI.
+     * <p>
+     *     Reconstruye la cola, la drena para ordenar los vehiculos por
+     *     tiempo restante, y la recontruye inmediatamente para no alterar
+     *     el estado interno del sistema. Cada vehiculo muestra: patente,
+     *     tiempo restante aproximado y distancia restante.
+     * </p>
+     * @return Texto con el listado de vehiculos ocupados ordenados
+     */
+    public String obtenerTextoColaOcupados() {
+        reconstruirColaOcupados();
+        int n = colaOcupados.tamanio();
+        int[] indices = new int[n];
+        double[] etas = new double[n];
+        int count = 0;
+        for (int i = 0; i < vehiculos.tamanio(); i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
+            if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
+                indices[count] = i;
+                etas[count] = calcularRestanteETA(i);
+                count++;
+            }
+        }
+        for (int i = 0; i < count - 1; i++) {
+            for (int j = i + 1; j < count; j++) {
+                if (etas[j] < etas[i]) {
+                    double tmpE = etas[i]; etas[i] = etas[j]; etas[j] = tmpE;
+                    int tmpI = indices[i]; indices[i] = indices[j]; indices[j] = tmpI;
+                }
+            }
+        }
+        StringBuilder sb = new StringBuilder("--- Cola Ocupados ---\n");
+        for (int k = 0; k < count; k++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(indices[k]);
+            double distKm = etas[k] * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
+            sb.append(v.getPatente())
+                    .append("  ~").append(String.format("%.0f", etas[k])).append("s  ")
+                    .append(String.format("%.1f", distKm)).append("km\n");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Calcula el ETA restante (en segundos) para un vehiculo basado en su
+     * posicion actual en la ruta activa.
+     * 
+     * @param indiceVehiculo Indice del vehiculo en la lista de vehiculos
+     * @return Tiempo restante estimado en segundos, o INFINITO si no hay ruta
+     */
+    public double calcularRestanteETA(int indiceVehiculo) {
+        Vehiculo v = (Vehiculo) vehiculos.devolver(indiceVehiculo);
+        int[] ruta = v.getRutaActiva();
+        if (ruta.length == 0) {
+            return INFINITO;
+        }
+        double eta = 0;
+        for (int j = v.getIndiceRuta(); j < ruta.length - 1; j++) {
+            eta += grafo.getMatrizCosto().devolver(ruta[j], ruta[j + 1]);
+        }
+        return eta;
+    }
+
+    /**
+     * Actualiza la prioridad de un vehiculo en la cola de ocupados.
+     * Se llama en cada tick de simulacion para reflejar el ETA restante.
+     * @param idxVehiculo Indice del vehiculo en la lista
+     * @param nuevaETA Nuevo tiempo restante estimado en segundos
+     */
+    public void actualizarPrioridadOcupado(int idxVehiculo, double nuevaETA) {
+        colaOcupados.actualizarPrioridad(idxVehiculo, nuevaETA);
     }
 
     /**
@@ -313,37 +620,31 @@ public class SistemaViajes {
     }
 
     /**
-     * Encuentra un destino aleatorio adyacente al nodo dado.
-     * <p>
-     *     Busca aleatoriamente un nodo que tenga una conexion valida
-     *     (costo finito) desde el nodo de origen.
-     * </p>
-     * @param nodoActual Nodo de origen
-     * @return Indice del destino aleatorio, o -1 si no se encontro ninguna conexion
-     */
-    public int encontrarDestinoAleatorio(int nodoActual) {
-        Random rnd = new Random();
-        int intentos = 0;
-        while (intentos < 100) {
-            int destino = rnd.nextInt(grafo.getOrden());
-            if (destino != nodoActual && grafo.getMatrizCosto().devolver(nodoActual, destino) < Double.POSITIVE_INFINITY) {
-                return destino;
-            }
-            intentos++;
-        }
-        return -1;
-    }
-
-    /**
      * Acepta un viaje: asigna el pasajero, calcula la ruta y cambia el estado del vehiculo.
      * @param vehiculo Vehiculo que acepta el viaje
      * @param usuario Usuario a recoger
+     * @return true si el viaje fue aceptado, false si no hay ruta (el vehiculo vuelve a DISPONIBLE)
      */
-    private void aceptarViaje(Vehiculo vehiculo, Usuario usuario) {
+    private boolean aceptarViaje(Vehiculo vehiculo, Usuario usuario) {
         vehiculo.setEstado(EstadoVehiculo.APROXIMANDO);
         vehiculo.setPasajeroAbordo(usuario);
 
         int[] ruta = ruteador.calcularRuta(vehiculo.getNodoActual(), usuario.getNodoOrigen());
+        if (ruta.length == 0) {
+            vehiculo.setEstado(EstadoVehiculo.DISPONIBLE);
+            vehiculo.setPasajeroAbordo(null);
+            return false;
+        }
         vehiculo.setRutaActiva(ruta);
+
+        int idx = buscarIndiceVehiculo(vehiculo);
+        if (idx != -1) {
+            double eta = 0;
+            for (int i = 0; i < ruta.length - 1; i++) {
+                eta += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
+            }
+            colaOcupados.insertar(idx, eta);
+        }
+        return true;
     }
 }

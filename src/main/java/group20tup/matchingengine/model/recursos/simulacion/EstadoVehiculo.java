@@ -11,7 +11,10 @@ package group20tup.matchingengine.model.recursos.simulacion;
  * @version 1.0
  */
 public enum EstadoVehiculo {
+    /** Vehiculo sin pasajero, disponible para aceptar viajes. */
     DISPONIBLE,
+    /** Vehiculo en camino hacia el usuario que solicito el viaje. */
     APROXIMANDO,
+    /** Vehiculo transportando a un pasajero hacia su destino. */
     EN_VIAJE
 }

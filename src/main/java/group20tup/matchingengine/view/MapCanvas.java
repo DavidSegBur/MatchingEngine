@@ -6,11 +6,11 @@ import group20tup.matchingengine.model.recursos.MetadataNodo;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
 import group20tup.matchingengine.model.recursos.simulacion.Usuario;
 import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
-import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
-import group20tup.matchingengine.model.recursos.simulacion.Vehiculo;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 
 /**
  * Renderizador del mapa vial sobre un Canvas de JavaFX.
@@ -265,8 +265,13 @@ public class MapCanvas {
             Vehiculo v = (Vehiculo) vehiculos.devolver(i);
             double[] p = proyectarInterpolado(v, tx, ty, tw, th);
 
+            boolean destacado = v.getDestacadoHasta() > System.nanoTime();
+            double radio = destacado ? VEHICULO_RADIO * 1.6 : VEHICULO_RADIO;
+
             Color color;
-            if (v.getEstado() == EstadoVehiculo.DISPONIBLE) {
+            if (destacado) {
+                color = Color.GOLD;
+            } else if (v.getEstado() == EstadoVehiculo.DISPONIBLE) {
                 color = Color.LIMEGREEN;
             } else if (v.getEstado() == EstadoVehiculo.APROXIMANDO) {
                 color = Color.ORANGE;
@@ -275,12 +280,21 @@ public class MapCanvas {
             }
 
             gc.setFill(color);
-            gc.fillOval(p[0] - VEHICULO_RADIO, p[1] - VEHICULO_RADIO,
-                    VEHICULO_RADIO * 2, VEHICULO_RADIO * 2);
+            gc.fillOval(p[0] - radio, p[1] - radio,
+                    radio * 2, radio * 2);
             gc.setStroke(Color.color(0.15, 0.15, 0.15));
+            gc.setLineWidth(destacado ? 2.5 : 1.5);
+            gc.strokeOval(p[0] - radio, p[1] - radio,
+                    radio * 2, radio * 2);
+
+            gc.setFont(Font.font("monospace", 10));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.setStroke(Color.rgb(30, 30, 30));
             gc.setLineWidth(1.5);
-            gc.strokeOval(p[0] - VEHICULO_RADIO, p[1] - VEHICULO_RADIO,
-                    VEHICULO_RADIO * 2, VEHICULO_RADIO * 2);
+            gc.strokeText(v.getPatente(), p[0], p[1] - radio - 3);
+            gc.setFill(Color.WHITE);
+            gc.fillText(v.getPatente(), p[0], p[1] - radio - 3);
+            gc.setTextAlign(TextAlignment.LEFT);
         }
     }
 

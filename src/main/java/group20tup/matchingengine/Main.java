@@ -1,5 +1,7 @@
 package group20tup.matchingengine;
 
+import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
+import group20tup.matchingengine.model.utilidades.calculadorescaminos.FloydWarshallRutas;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -14,11 +16,19 @@ import java.io.IOException;
  * <p>
  *     Carga la pantalla de carga como modal y luego muestra
  *     la ventana principal del simulador de flota de vehiculos.
+ *     Los campos estaticos {@link #preloadedGrafo} y
+ *     {@link #precomputedFloyd} permiten que la pantalla de carga
+ *     precargue datos mientras se muestran las animaciones.
  * </p>
  * @author Ivan
  * @version 1.0
  */
 public class Main extends Application {
+
+    /** Grafo precargado por la pantalla de carga. Consumido por DashboardController. */
+    public static GrafoMapa preloadedGrafo;
+    /** Floyd-Warshall precomputado por la pantalla de carga. Consumido por DashboardController. */
+    public static volatile FloydWarshallRutas precomputedFloyd;
 
     /**
      * Inicializa la pantalla de carga modal sobre la ventana principal.

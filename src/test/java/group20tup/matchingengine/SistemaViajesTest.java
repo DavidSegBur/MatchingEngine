@@ -425,6 +425,36 @@ class SistemaViajesTest {
             s.completarTransito(v);
             assertTrue(s.getColaOcupados().estaVacia());
         }
+
+        @Test
+        @DisplayName("obtenerTextoColaOcupados muestra todos los ocupados")
+        void testObtenerTextoColaOcupadosMultiple() {
+            SistemaViajes s = crearSistema();
+            s.registrarVehiculo(new Vehiculo("OCC01", 0));
+            s.registrarVehiculo(new Vehiculo("OCC02", 100));
+            s.registrarVehiculo(new Vehiculo("OCC03", 200));
+
+            s.agregarUsuario(new Usuario(10, 47));
+            s.agregarUsuario(new Usuario(11, 150));
+            s.agregarUsuario(new Usuario(12, 250));
+
+            s.solicitarViaje(s.getUsuario(0));
+            s.solicitarViaje(s.getUsuario(1));
+            s.solicitarViaje(s.getUsuario(2));
+
+            int ocupados = 0;
+            for (int i = 0; i < s.totalVehiculos(); i++) {
+                if (s.getVehiculo(i).getEstado() != EstadoVehiculo.DISPONIBLE) {
+                    ocupados++;
+                }
+            }
+
+            String text = s.obtenerTextoColaOcupados();
+            String[] lines = text.split("\n");
+            assertEquals(ocupados, lines.length - 1,
+                    "obtenerTextoColaOcupados debe mostrar " + ocupados + " vehiculos");
+            assertTrue(text.contains("--- Cola Ocupados ---"));
+        }
     }
 
     @Nested

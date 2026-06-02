@@ -78,6 +78,32 @@ public class ColaPrioridadMonticulo {
     }
 
     /**
+     * Inserta un elemento identificado por su patente con su prioridad en la cola.
+     * @param patente Patente del vehiculo
+     * @param prioridad Valor de prioridad (menor = mayor prioridad)
+     */
+    public void insertarPatente(String patente, double prioridad) {
+        heap.insertar(patente, prioridad);
+    }
+
+    /**
+     * Extrae y devuelve la patente del elemento con mayor prioridad.
+     * @return Patente del elemento extraido, o null si la cola esta vacia
+     */
+    public String extraerMinPatente() {
+        return heap.extraerMinString();
+    }
+
+    /**
+     * Actualiza la prioridad de un elemento identificado por su patente.
+     * @param patente Patente del vehiculo a actualizar
+     * @param nuevaPrioridad Nueva prioridad (debe ser menor o igual)
+     */
+    public void actualizarPrioridadPatente(String patente, double nuevaPrioridad) {
+        heap.decreaseKey(patente, nuevaPrioridad);
+    }
+
+    /**
      * Elimina todos los elementos de la cola en O(1).
      */
     public void limpiar() {

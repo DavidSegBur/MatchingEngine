@@ -224,16 +224,16 @@ public class SistemaViajes {
             return null;
         }
 
-        int idxVehiculo = colaDespachoActiva.extraerMin();
-        Vehiculo candidato = (Vehiculo) vehiculos.devolver(idxVehiculo);
+        String patente = colaDespachoActiva.extraerMinPatente();
         candidatosProcesados++;
+
+        Vehiculo candidato = buscarVehiculoPorPatente(patente);
+        if (candidato == null || !candidato.isDisponible()) {
+            return null;
+        }
 
         long DESTACADO_DURACION_NANOS = 800_000_000L;
         candidato.setDestacadoHasta(System.nanoTime() + DESTACADO_DURACION_NANOS);
-
-        if (!candidato.isDisponible()) {
-            return null;
-        }
 
         if (rndDespacho != null && rndDespacho.nextDouble() < PROBABILIDAD_RECHAZO) {
             estadisticas.registrarViajeRechazado();
@@ -279,7 +279,7 @@ public class SistemaViajes {
             if (v.isDisponible()) {
                 double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
                 if (eta < INFINITO) {
-                    cola.insertar(i, eta);
+                    cola.insertarPatente(v.getPatente(), eta);
                 }
             }
         }
@@ -304,8 +304,9 @@ public class SistemaViajes {
         StringBuilder sb = new StringBuilder("── Cola de despacho ──\n");
         int count = 0;
         while (!cola.estaVacia()) {
-            int idx = cola.extraerMin();
-            Vehiculo v = (Vehiculo) vehiculos.devolver(idx);
+            String patente = cola.extraerMinPatente();
+            Vehiculo v = buscarVehiculoPorPatente(patente);
+            if (v == null) continue;
             double eta = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
             sb.append(String.format("%d. %s — %.0fs\n", ++count, v.getPatente(), eta));
         }
@@ -332,8 +333,9 @@ public class SistemaViajes {
         StringBuilder sb = new StringBuilder("── Cola de despacho ──\n");
         int count = 0;
         while (!copia.estaVacia()) {
-            int idx = copia.extraerMin();
-            Vehiculo v = (Vehiculo) vehiculos.devolver(idx);
+            String patente = copia.extraerMinPatente();
+            Vehiculo v = buscarVehiculoPorPatente(patente);
+            if (v == null) continue;
             double eta = calcularETA(v.getNodoActual(), usuarioDespachando.getNodoOrigen());
             sb.append(String.format("%d. %s — %.0fs\n", ++count, v.getPatente(), eta));
         }
@@ -374,8 +376,9 @@ public class SistemaViajes {
         ColaPrioridadMonticulo colaDespacho = construirColaDespacho(usuario);
 
         while (!colaDespacho.estaVacia()) {
-            int idxVehiculo = colaDespacho.extraerMin();
-            Vehiculo candidato = (Vehiculo) vehiculos.devolver(idxVehiculo);
+            String patente = colaDespacho.extraerMinPatente();
+            Vehiculo candidato = buscarVehiculoPorPatente(patente);
+            if (candidato == null) continue;
 
             if (candidato.isDisponible()) {
                 if (rnd != null && rnd.nextDouble() < PROBABILIDAD_RECHAZO) {
@@ -528,8 +531,8 @@ public class SistemaViajes {
         for (int i = 0; i < vehiculos.tamanio(); i++) {
             Vehiculo v = (Vehiculo) vehiculos.devolver(i);
             if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
-                double eta = calcularRestanteETA(i);
-                colaOcupados.insertar(i, eta);
+                double eta = calcularRestanteETA(v);
+                colaOcupados.insertarPatente(v.getPatente(), eta);
             }
         }
     }
@@ -537,32 +540,48 @@ public class SistemaViajes {
     /**
      * Devuelve el texto formateado de la cola de ocupados para la UI.
      * <p>
-     *     Reconstruye la cola, la drena para ordenar los vehiculos por
-     *     tiempo restante, y la recontruye inmediatamente para no alterar
-     *     el estado interno del sistema. Cada vehiculo muestra: patente,
-     *     tiempo restante aproximado y distancia restante.
+     *     Escanea todos los vehiculos no disponibles, los ordena por estado
+     *     (EN_VIAJE antes que APROXIMANDO) y por ETA ascendente. Cada
+     *     vehiculo muestra: patente, tiempo restante aproximado y distancia
+     *     restante. No modifica la cola de ocupados interna.
      * </p>
      * @return Texto con el listado de vehiculos ocupados ordenados
      */
     public String obtenerTextoColaOcupados() {
-        reconstruirColaOcupados();
-        int n = colaOcupados.tamanio();
+        int n = 0;
+        for (int i = 0; i < vehiculos.tamanio(); i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
+            if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
+                n++;
+            }
+        }
         int[] indices = new int[n];
         double[] etas = new double[n];
+        boolean[] enViaje = new boolean[n];
         int count = 0;
         for (int i = 0; i < vehiculos.tamanio(); i++) {
             Vehiculo v = (Vehiculo) vehiculos.devolver(i);
             if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
                 indices[count] = i;
-                etas[count] = calcularRestanteETA(i);
+                etas[count] = calcularRestanteETA(v);
+                enViaje[count] = v.getEstado() == EstadoVehiculo.EN_VIAJE;
                 count++;
             }
         }
         for (int i = 0; i < count - 1; i++) {
             for (int j = i + 1; j < count; j++) {
-                if (etas[j] < etas[i]) {
+                boolean swap = false;
+                if (enViaje[i] && !enViaje[j]) {
+                    // i stays before j
+                } else if (!enViaje[i] && enViaje[j]) {
+                    swap = true;
+                } else if (etas[j] < etas[i]) {
+                    swap = true;
+                }
+                if (swap) {
                     double tmpE = etas[i]; etas[i] = etas[j]; etas[j] = tmpE;
                     int tmpI = indices[i]; indices[i] = indices[j]; indices[j] = tmpI;
+                    boolean tmpB = enViaje[i]; enViaje[i] = enViaje[j]; enViaje[j] = tmpB;
                 }
             }
         }
@@ -570,7 +589,9 @@ public class SistemaViajes {
         for (int k = 0; k < count; k++) {
             Vehiculo v = (Vehiculo) vehiculos.devolver(indices[k]);
             double distKm = etas[k] * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
+            String tag = enViaje[k] ? "EN_VIAJE" : "APROXIMANDO";
             sb.append(v.getPatente())
+                    .append(" [").append(tag).append("]")
                     .append("  ~").append(String.format("%.0f", etas[k])).append("s  ")
                     .append(String.format("%.1f", distKm)).append("km\n");
         }
@@ -580,12 +601,10 @@ public class SistemaViajes {
     /**
      * Calcula el ETA restante (en segundos) para un vehiculo basado en su
      * posicion actual en la ruta activa.
-     * 
-     * @param indiceVehiculo Indice del vehiculo en la lista de vehiculos
+     * @param v Vehiculo a evaluar
      * @return Tiempo restante estimado en segundos, o INFINITO si no hay ruta
      */
-    public double calcularRestanteETA(int indiceVehiculo) {
-        Vehiculo v = (Vehiculo) vehiculos.devolver(indiceVehiculo);
+    public double calcularRestanteETA(Vehiculo v) {
         int[] ruta = v.getRutaActiva();
         if (ruta.length == 0) {
             return INFINITO;
@@ -600,11 +619,24 @@ public class SistemaViajes {
     /**
      * Actualiza la prioridad de un vehiculo en la cola de ocupados.
      * Se llama en cada tick de simulacion para reflejar el ETA restante.
-     * @param idxVehiculo Indice del vehiculo en la lista
+     * @param patente Patente del vehiculo
      * @param nuevaETA Nuevo tiempo restante estimado en segundos
      */
-    public void actualizarPrioridadOcupado(int idxVehiculo, double nuevaETA) {
-        colaOcupados.actualizarPrioridad(idxVehiculo, nuevaETA);
+    public void actualizarPrioridadOcupado(String patente, double nuevaETA) {
+        colaOcupados.actualizarPrioridadPatente(patente, nuevaETA);
+    }
+
+    /**
+     * Busca un vehiculo en la lista por su patente.
+     * @param patente Patente del vehiculo a buscar
+     * @return Vehiculo encontrado, o null si no existe
+     */
+    private Vehiculo buscarVehiculoPorPatente(String patente) {
+        for (int i = 0; i < vehiculos.tamanio(); i++) {
+            Vehiculo v = (Vehiculo) vehiculos.devolver(i);
+            if (v.getPatente().equals(patente)) return v;
+        }
+        return null;
     }
 
     /**
@@ -637,14 +669,11 @@ public class SistemaViajes {
         }
         vehiculo.setRutaActiva(ruta);
 
-        int idx = buscarIndiceVehiculo(vehiculo);
-        if (idx != -1) {
-            double eta = 0;
-            for (int i = 0; i < ruta.length - 1; i++) {
-                eta += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
-            }
-            colaOcupados.insertar(idx, eta);
+        double eta = 0;
+        for (int i = 0; i < ruta.length - 1; i++) {
+            eta += grafo.getMatrizCosto().devolver(ruta[i], ruta[i + 1]);
         }
+        colaOcupados.insertarPatente(vehiculo.getPatente(), eta);
         return true;
     }
 }

@@ -138,8 +138,8 @@ public class GestorSimulacion implements MotorSimulacion {
             avanzarProgreso(v);
 
             if (v.getEstado() != EstadoVehiculo.DISPONIBLE) {
-                double etaRestante = sistema.calcularRestanteETA(i);
-                sistema.actualizarPrioridadOcupado(i, etaRestante);
+                double etaRestante = sistema.calcularRestanteETA(v);
+                sistema.actualizarPrioridadOcupado(v.getPatente(), etaRestante);
             }
         }
 

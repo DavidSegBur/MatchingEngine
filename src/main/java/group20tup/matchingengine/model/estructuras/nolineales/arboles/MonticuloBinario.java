@@ -10,6 +10,7 @@ package group20tup.matchingengine.model.estructuras.nolineales.arboles;
 public class MonticuloBinario {
     private int[] heap;
     private double[] prioridades;
+    private String[] claves;
     private int size;
     private int capacity;
 
@@ -22,6 +23,7 @@ public class MonticuloBinario {
         this.capacity = capacity;
         this.heap = new int[capacity];
         this.prioridades = new double[capacity];
+        this.claves = new String[capacity];
         this.size = 0;
     }
 
@@ -34,8 +36,10 @@ public class MonticuloBinario {
         this.size = other.size;
         this.heap = new int[this.capacity];
         this.prioridades = new double[this.capacity];
+        this.claves = new String[this.capacity];
         System.arraycopy(other.heap, 0, this.heap, 0, this.size);
         System.arraycopy(other.prioridades, 0, this.prioridades, 0, this.size);
+        System.arraycopy(other.claves, 0, this.claves, 0, this.size);
     }
 
     /**
@@ -46,20 +50,50 @@ public class MonticuloBinario {
      */
     public void insertar(int nodo, double prioridad) {
         if (size >= capacity) {
-            // Redimensionado simple - en practica podria ser mas sofisticado
             int newCapacity = capacity * 2;
             int[] newHeap = new int[newCapacity];
             double[] newPrioridades = new double[newCapacity];
+            String[] newClaves = new String[newCapacity];
             System.arraycopy(heap, 0, newHeap, 0, size);
             System.arraycopy(prioridades, 0, newPrioridades, 0, size);
+            System.arraycopy(claves, 0, newClaves, 0, size);
             heap = newHeap;
             prioridades = newPrioridades;
+            claves = newClaves;
             capacity = newCapacity;
         }
 
         int i = size;
         heap[i] = nodo;
         prioridades[i] = prioridad;
+        size++;
+        subir(i);
+    }
+
+    /**
+     * Inserta un elemento identificado por su patente con su prioridad en el monticulo.
+     * @param clave Patente del vehiculo
+     * @param prioridad Valor de prioridad (mas bajo = mas alta prioridad)
+     */
+    public void insertar(String clave, double prioridad) {
+        if (size >= capacity) {
+            int newCapacity = capacity * 2;
+            int[] newHeap = new int[newCapacity];
+            double[] newPrioridades = new double[newCapacity];
+            String[] newClaves = new String[newCapacity];
+            System.arraycopy(heap, 0, newHeap, 0, size);
+            System.arraycopy(prioridades, 0, newPrioridades, 0, size);
+            System.arraycopy(claves, 0, newClaves, 0, size);
+            heap = newHeap;
+            prioridades = newPrioridades;
+            claves = newClaves;
+            capacity = newCapacity;
+        }
+
+        int i = size;
+        heap[i] = -1;
+        prioridades[i] = prioridad;
+        claves[i] = clave;
         size++;
         subir(i);
     }
@@ -81,6 +115,27 @@ public class MonticuloBinario {
         int raiz = heap[0];
         heap[0] = heap[size - 1];
         prioridades[0] = prioridades[size - 1];
+        size--;
+        hundir(0);
+
+        return raiz;
+    }
+
+    /**
+     * Elimina y retorna la clave (patente) con la prioridad minima.
+     * @return Clave con prioridad minima, o null si el monticulo esta vacio
+     */
+    public String extraerMinString() {
+        if (size <= 0) return null;
+        if (size == 1) {
+            size--;
+            return claves[0];
+        }
+
+        String raiz = claves[0];
+        heap[0] = heap[size - 1];
+        prioridades[0] = prioridades[size - 1];
+        claves[0] = claves[size - 1];
         size--;
         hundir(0);
 
@@ -116,6 +171,24 @@ public class MonticuloBinario {
     public void decreaseKey(int valor, double nuevaPrioridad) {
         for (int i = 0; i < size; i++) {
             if (heap[i] == valor) {
+                if (nuevaPrioridad < prioridades[i]) {
+                    prioridades[i] = nuevaPrioridad;
+                    subir(i);
+                }
+                return;
+            }
+        }
+    }
+
+    /**
+     * Actualiza la prioridad de un elemento identificado por su clave (patente).
+     * Busca linealmente la clave y reubica hacia arriba si la nueva prioridad es menor.
+     * @param clave Clave del elemento a actualizar
+     * @param nuevaPrioridad Nueva prioridad (debe ser menor o igual a la actual)
+     */
+    public void decreaseKey(String clave, double nuevaPrioridad) {
+        for (int i = 0; i < size; i++) {
+            if (clave.equals(claves[i])) {
                 if (nuevaPrioridad < prioridades[i]) {
                     prioridades[i] = nuevaPrioridad;
                     subir(i);
@@ -213,5 +286,9 @@ public class MonticuloBinario {
         double tempPrioridad = prioridades[i];
         prioridades[i] = prioridades[j];
         prioridades[j] = tempPrioridad;
+
+        String tempClave = claves[i];
+        claves[i] = claves[j];
+        claves[j] = tempClave;
     }
 }

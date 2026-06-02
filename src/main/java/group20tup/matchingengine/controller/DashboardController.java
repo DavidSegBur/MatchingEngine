@@ -16,7 +16,10 @@ import group20tup.matchingengine.view.ProyeccionMapa;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -29,6 +32,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
@@ -289,17 +294,66 @@ public class DashboardController {
         MetadataNodo nodo = (MetadataNodo) grafoMapa.getListaEsquinas().devolver(v.getNodoActual());
 
         if (v.getEstado() == EstadoVehiculo.DISPONIBLE) {
+            // ── Actualiza el panel lateral ──────────────────────────────────
             lblInfo.setText(String.format(
                     "Vehiculo: %s\nEstado: DISPONIBLE\nPosicion: nodo %d\nUbicacion: %s",
                     v.getPatente(), v.getNodoActual(), nodo.getNombreEsquina()));
             lblBusyQueue.setText("");
+
+            // ── Abre la ventana flotante ────────────────────────────────────
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/group20tup/matchingengine/fxml/vehiculoDisponible.fxml"));
+                Parent root = loader.load();
+
+                VehiculoDisponibleController ctrl = loader.getController();
+                ctrl.setDatos(v.getPatente(), v.getNodoActual(), nodo.getNombreEsquina());
+
+                mostrarVentana(root, "Vehículo disponible", 800,00); //revisar para que quede centrada borde inferior
+            } catch (Exception ex) { ex.printStackTrace();}
         } else {
-            String infoVehiculo = String.format(
+            // ── Actualiza el panel lateral ──────────────────────────────────
+            lblInfo.setText(String.format(
                     "Vehiculo: %s\nEstado: %s\nPosicion: nodo %d\nUbicacion: %s",
-                    v.getPatente(), v.getEstado(), v.getNodoActual(), nodo.getNombreEsquina());
-            lblInfo.setText(infoVehiculo);
+                    v.getPatente(), v.getEstado(), v.getNodoActual(), nodo.getNombreEsquina()));
             lblBusyQueue.setText(sistema.obtenerTextoColaOcupados());
+            // ── Abre la ventana flotante ────────────────────────────────────
+           /*try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/group20tup/matchingengine/fxml/ventana-vehiculo-ocupado.fxml"));
+                Parent root = loader.load();
+
+                VentanaVehiculoOcupadoController ctrl = loader.getController();
+                ctrl.setDatos(v.getPatente(), v.getEstado().toString(),
+                            v.getNodoActual(), nodo.getNombreEsquina(),
+                            sistema.obtenerTextoColaOcupados());
+                mostrarVentana(root, "Vehículo ocupado", 00, 00); //revisar para que quede centrada borde inferior
+            } catch (Exception ex) {ex.printStackTrace();}*/
         }
+    }
+
+    /**
+     * Método para crear las ventanas para mostrar en pantalla la información
+     * de los vehículos y la Lista de los vehículos ocupados
+     */
+
+    private void mostrarVentana(Parent root, String titulo, double width, double height) {
+        Stage ventana = new Stage();
+        ventana.setScene(new Scene(root));
+        ventana.setTitle(titulo);
+        ventana.initOwner(mapaCanvas.getScene().getWindow());
+        ventana.initModality(Modality.NONE);
+        ventana.setResizable(false);
+    
+        //tamaño de la ventana
+        ventana.setWidth(width);
+        ventana.setHeight(height);
+
+        Stage owner = (Stage) mapaCanvas.getScene().getWindow();
+        ventana.setX(owner.getX() + (owner.getWidth()  - width)  / 2);
+        ventana.setY(owner.getY() + (owner.getHeight() - height));
+
+        ventana.show();
     }
 
     /**

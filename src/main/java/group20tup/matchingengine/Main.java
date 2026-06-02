@@ -3,7 +3,7 @@ package group20tup.matchingengine;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
+import javafx.scene.image.Image; //revisar
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -26,7 +26,7 @@ public class Main extends Application {
      * @throws IOException si no se puede cargar el archivo FXML
      */
     @Override
-    public void start(Stage stage) throws IOException {
+    public void start(Stage stage) throws IOException { //revisar
         /**>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
          * Ingresa Cambio, pantalla de inicio sobrepuesta a dashboard
          * 

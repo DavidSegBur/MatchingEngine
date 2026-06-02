@@ -1,7 +1,6 @@
 package group20tup.matchingengine.model.recursos.simulacion;
 
 import java.util.Objects;
-import java.util.Random;
 
 /**
  * Representa un vehiculo de la flota en el sistema de simulacion.
@@ -21,34 +20,13 @@ public class Vehiculo {
     private Usuario pasajeroAbordo;
     private int[] rutaActiva;
     private int indiceRuta;
-<<<<<<< HEAD
-    private String imagenPath; 
-
-    private static final String[] imagenes ={
-        "src/main/resources/imagenes/vehiculoA.png",
-        "src/main/resources/imagenes/vehiculoC.png",
-        "src/main/resources/imagenes/vehiculoV.png"
-    };
-
-    private static Random random = new Random();
-    private static String imagenAleatoria() {
-        int index = random.nextInt(imagenes.length);
-        return imagenes[index];
-    }
     
-=======
     private long destacadoHasta;
->>>>>>> upstream/main
+
 
     /**
      * Construye un vehiculo con los datos basicos.
-     * 
-     * Agrega una imagen Aleatoria de las 3 posibilidades
-     * La imagen debe ser una de las tres disponibles en la flota:
-     *         <li>{@code "VehiculoA.png"} – vehiculo blanco</li>
-     *         <li>{@code "VehiculoC.png"} – vehiculo celeste</li>
-     *         <li>{@code "VehiculoV.png"} – vehiculo verde</li>
-     *      
+        *      
      * @param patente Identificador unico del vehiculo (patente/licencia)
      * @param nodoInicial Nodo del grafo donde se ubica inicialmente
      * Ingresa Imagen Aleatoria contenida en el String images 
@@ -60,7 +38,6 @@ public class Vehiculo {
         this.pasajeroAbordo = null;
         this.rutaActiva = new int[0];
         this.indiceRuta = 0;
-        this.imagenPath = imagenAleatoria();
     }
 
     /**
@@ -125,14 +102,6 @@ public class Vehiculo {
      */
     public int[] getRutaActiva() {
         return rutaActiva;
-    }
-
-    /**
-     * Devuelve la imagen asociada al vehiculo para visualizacion en la simulacion.
-     * @return Ruta del archivo de imagen (.png) a asociar
-     */
-    public String getImagenPath() {
-        return this.imagenPath;
     }
 
     /**

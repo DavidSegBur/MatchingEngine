@@ -1,23 +1,20 @@
 package group20tup.matchingengine.controller;
 
-/**
- * IMPORTACIONES necesarias para cargar la pantalla siguiente al hacer click en el boton "INICIAR"
- */
+import group20tup.matchingengine.Main;
+import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
+import group20tup.matchingengine.model.utilidades.calculadorescaminos.FloydWarshallRutas;
+import javafx.animation.*;
+import javafx.concurrent.Task;
+import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
-
-/**
- * IMPORTACIONES necesarias para manejar las animaciones de la pantalla de carga
- */
-import javafx.animation.*;
-import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.net.URL;
@@ -55,12 +52,44 @@ public class PantallaCargaController implements Initializable {
     // ─────────────────────────────────────────────────────────────────────
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        cargarGrafoEnBackground();
 
-        // Ocultar todo excepto el logo antes de iniciar
         ocultarTodo();
-
-        // Iniciar la secuencia encadenada de animaciones
         reproducirSecuencia();
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // PRECARGA DE DATOS (se ejecuta en segundo plano mientras se reproduce
+    // la animacion de 6.5 segundos)
+    // ══════════════════════════════════════════════════════════════════════
+
+    /** Carga el grafo en un hilo de fondo. Al terminar, encadena Floyd-Warshall. */
+    private void cargarGrafoEnBackground() {
+        Task<GrafoMapa> task = new Task<>() {
+            @Override
+            protected GrafoMapa call() {
+                GrafoMapa g = new GrafoMapa();
+                g.cargarGrafo();
+                return g;
+            }
+        };
+        task.setOnSucceeded(e -> {
+            Main.preloadedGrafo = task.getValue();
+            precomputarFloydEnBackground();
+        });
+        new Thread(task).start();
+    }
+
+    /** Precomputa Floyd-Warshall en un hilo de fondo. */
+    private void precomputarFloydEnBackground() {
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() {
+                Main.precomputedFloyd = new FloydWarshallRutas(Main.preloadedGrafo);
+                return null;
+            }
+        };
+        new Thread(task).start();
     }
 
     // ══════════════════════════════════════════════════════════════════════

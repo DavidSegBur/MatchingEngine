@@ -1,5 +1,6 @@
 package group20tup.matchingengine.controller;
 
+import group20tup.matchingengine.Main;
 import group20tup.matchingengine.model.estructuras.nolineales.grafos.GrafoMapa;
 import group20tup.matchingengine.model.recursos.MetadataNodo;
 import group20tup.matchingengine.model.recursos.simulacion.EstadoVehiculo;
@@ -433,18 +434,22 @@ public class DashboardController {
      */
     @FXML
     public void initialize() {
-        ProgressIndicator loader = mostrarLoader();
-
-        Task<GrafoMapa> loadTask = crearTareaCargaGrafo();
-        loadTask.setOnSucceeded(e -> {
-            ocultarLoader(loader);
-            onGrafoCargado(loadTask.getValue());
-        });
-        loadTask.setOnFailed(e -> {
-            ocultarLoader(loader);
-            System.err.println("Error al cargar el grafo: " + loadTask.getException().getMessage());
-        });
-        new Thread(loadTask).start();
+        if (Main.preloadedGrafo != null) {
+            onGrafoCargado(Main.preloadedGrafo);
+            Main.preloadedGrafo = null;
+        } else {
+            ProgressIndicator loader = mostrarLoader();
+            Task<GrafoMapa> loadTask = crearTareaCargaGrafo();
+            loadTask.setOnSucceeded(e -> {
+                ocultarLoader(loader);
+                onGrafoCargado(loadTask.getValue());
+            });
+            loadTask.setOnFailed(e -> {
+                ocultarLoader(loader);
+                System.err.println("Error al cargar el grafo: " + loadTask.getException().getMessage());
+            });
+            new Thread(loadTask).start();
+        }
     }
 
     private ProgressIndicator mostrarLoader() {
@@ -474,7 +479,15 @@ public class DashboardController {
         grafoMapa = mapa;
         inicializarSistema(mapa);
         configurarSelectorAlgoritmo();
-        precomputarFloydEnBackground();
+        if (Main.precomputedFloyd != null) {
+            floydRuteador = Main.precomputedFloyd;
+            floydListo = true;
+            floydProgress.setVisible(false);
+            lblFloydStatus.setText("Floyd-Warshall listo");
+            Main.precomputedFloyd = null;
+        } else {
+            precomputarFloydEnBackground();
+        }
         configurarCanvas();
         construirSidePanel();
         iniciarTimelineEstadisticas();

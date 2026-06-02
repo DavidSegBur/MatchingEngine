@@ -309,7 +309,7 @@ public class DashboardController {
                 VehiculoDisponibleController ctrl = loader.getController();
                 ctrl.setDatos(v.getPatente(), v.getNodoActual(), nodo.getNombreEsquina());
 
-                mostrarVentana(root, "Vehículo disponible", 800,00); //revisar para que quede centrada borde inferior
+                mostrarVentana(root, "Vehículo disponible", 320, 130);
             } catch (Exception ex) { ex.printStackTrace();}
         } else {
             // ── Actualiza el panel lateral ──────────────────────────────────

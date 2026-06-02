@@ -4,91 +4,65 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="800" 
-            prefWidth="1200" 
-            style="-fx-background-color: white;" 
-            xmlns="http://javafx.com/javafx/26" 
-            xmlns:fx="http://javafx.com/fxml/1" 
-            fx:controller="group20tup.matchingengine.controller.PantallaCargaController"> 
+<StackPane style="-fx-background-color: white;"
+           xmlns="http://javafx.com/javafx/26"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="group20tup.matchingengine.controller.PantallaCargaController">
 
-  <ImageView  fx:id="logoImageView" 
-              fitHeight="253.0" 
-              fitWidth="266.0" 
-              layoutX="482.0" 
-              layoutY="100.0" 
-              pickOnBounds="true" 
-              preserveRatio="true" 
-              AnchorPane.leftAnchor="482.0">
-      <image><Image url="@Images/Logo.png" /></image>
-  </ImageView>
+   <VBox alignment="CENTER"
+         spacing="20"
+         maxWidth="800">
 
-  <!-- ① Rectángulo negro → "BIENVENIDO A" en blanco -->
-  <StackPane fx:id="stackPaneBienvenido" 
-             layoutX="279.0" 
-             layoutY="410.0" 
-             maxWidth="832.0" 
-             prefHeight="51.0" 
-             prefWidth="707.0" 
-             style="-fx-background-color: black; 
-                    -fx-background-radius: 5;" 
-             AnchorPane.leftAnchor="279.0" 
-             AnchorPane.rightAnchor="279.0">
+      <ImageView fx:id="logoImageView"
+                 fitWidth="266"
+                 preserveRatio="true"
+                 pickOnBounds="true">
+          <image><Image url="@Images/Logo.png" /></image>
+      </ImageView>
 
-      <children>
-           <Label style="-fx-text-fill:   white;                             
-                         -fx-font-family: 'Arial Black';                                                                              
-                         -fx-font-size:   30px;                                                                              
-                         -fx-font-weight: bold;" 
-                  text="BIENVENIDO A" />
+      <!-- Rectángulo negro → "BIENVENIDO A" en blanco -->
+      <StackPane fx:id="stackPaneBienvenido"
+                 prefHeight="51"
+                 style="-fx-background-color: black;
+                        -fx-background-radius: 5;
+                        -fx-padding: 0 20;">
 
-      </children>
-  </StackPane>
+          <Label style="-fx-text-fill: white;
+                        -fx-font-family: 'Arial Black';
+                        -fx-font-size: 30px;
+                        -fx-font-weight: bold;"
+                 text="BIENVENIDO A" />
+      </StackPane>
 
-  <!-- ② "MATCHING ENGINE" en fuente Stencil -->
-  <Label fx:id="matchingEngineLabel" 
-         layoutX="309.0" 
-         layoutY="468.0" 
-         prefHeight="74.0" 
-         prefWidth="582.0" 
-         style="-fx-text-fill:   black;                                                         
-                -fx-font-family: 'Stencil';                                                         
-                -fx-font-size:   60px;                                                         
-                -fx-font-weight: bold;" 
-         text="&quot;MATCHING ENGINE&quot;" 
-         AnchorPane.leftAnchor="309.0" 
-         AnchorPane.rightAnchor="309.0" />
+      <!-- "MATCHING ENGINE" en fuente Stencil -->
+      <Label fx:id="matchingEngineLabel"
+             style="-fx-text-fill: black;
+                    -fx-font-family: 'Stencil';
+                    -fx-font-size: 60px;
+                    -fx-font-weight: bold;"
+             text="&quot;MATCHING ENGINE&quot;" />
 
-  <!-- ③ Subtítulo en Arial Black -->
-  <Label fx:id="subtituloLabel" 
-         alignment="CENTER" 
-         layoutX="375.0" 
-         layoutY="556.0" 
-         prefHeight="36.0" 
-         prefWidth="449.0" 
-         text="&quot;Te conectamos con tu Destino...&quot;" 
-         AnchorPane.leftAnchor="375.5" 
-         AnchorPane.rightAnchor="375.5">
-      <font><Font name="Calibri Bold" size="31.0" /></font>
-  </Label>
+      <!-- Subtítulo -->
+      <Label fx:id="subtituloLabel"
+             text="&quot;Te conectamos con tu Destino...&quot;">
+          <font><Font name="Calibri Bold" size="31.0" /></font>
+      </Label>
 
-  <!-- ④ Botón negro con texto blanco -->   
-  <Button fx:id="btnAccion0" 
-          alignment="CENTER" 
-          layoutX="473.0" 
-          layoutY="633.0" 
-          onAction="#onIniciarClick" 
-          prefHeight="20.0" 
-          prefWidth="254.0" 
-          style="-fx-background-color: black;                   
-                 -fx-background-radius: 16;" 
-          text="I N I C I A R" 
-          textFill="WHITE" 
-          AnchorPane.leftAnchor="473.0" 
-          AnchorPane.rightAnchor="473.0">
-      <font><Font name="Calibri Bold" size="31.0" /></font>
-  </Button>
-</AnchorPane>
+      <!-- Botón negro con texto blanco -->
+      <Button fx:id="btnAccion0"
+              alignment="CENTER"
+              onAction="#onIniciarClick"
+              style="-fx-background-color: black;
+                     -fx-background-radius: 16;
+                     -fx-padding: 10 30;"
+              text="I N I C I A R"
+              textFill="WHITE">
+          <font><Font name="Calibri Bold" size="31.0" /></font>
+      </Button>
+
+   </VBox>
+</StackPane>

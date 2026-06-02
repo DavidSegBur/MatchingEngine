@@ -36,10 +36,6 @@ import java.util.ResourceBundle;
  */
 public class PantallaCargaController implements Initializable {
 
-    // ── Tamaño final del logo definido en el FXML ──────────────────────────
-    /*private static final double LOGO_FINAL_W  = 313.0;
-    private static final double LOGO_FINAL_H  = 338.0;*/ // No es necesario si usamos escala (1.0 = tamaño definido en FXML)
-
     // Factor de escala inicial del logo (aparece X veces más grande)
     private static final double LOGO_SCALE_INICIO = 2.5;
 

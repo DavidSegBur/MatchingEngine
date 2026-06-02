@@ -665,6 +665,7 @@ public class SistemaViajes {
         if (ruta.length == 0) {
             vehiculo.setEstado(EstadoVehiculo.DISPONIBLE);
             vehiculo.setPasajeroAbordo(null);
+            vehiculo.setRutaActiva(new int[0]);
             return false;
         }
         vehiculo.setRutaActiva(ruta);

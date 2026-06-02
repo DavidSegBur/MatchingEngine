@@ -23,6 +23,7 @@ public class Vehiculo {
     private int[] rutaActiva;
     private int indiceRuta;
     private long destacadoHasta;
+    private int ticksSinRuta;
 
     /**
      * Construye un vehiculo con los datos basicos.
@@ -38,6 +39,7 @@ public class Vehiculo {
         this.pasajeroAbordo = null;
         this.rutaActiva = new int[0];
         this.indiceRuta = 0;
+        this.ticksSinRuta = 0;
     }
 
     /**
@@ -190,6 +192,22 @@ public class Vehiculo {
      */
     public void setDestacadoHasta(long destacadoHasta) {
         this.destacadoHasta = destacadoHasta;
+    }
+
+    /**
+     * Devuelve la cantidad de ticks consecutivos sin encontrar ruta.
+     * @return Cantidad de ticks sin ruta
+     */
+    public int getTicksSinRuta() {
+        return ticksSinRuta;
+    }
+
+    /**
+     * Establece la cantidad de ticks consecutivos sin encontrar ruta.
+     * @param ticksSinRuta Nueva cantidad de ticks sin ruta
+     */
+    public void setTicksSinRuta(int ticksSinRuta) {
+        this.ticksSinRuta = ticksSinRuta;
     }
 
     /**

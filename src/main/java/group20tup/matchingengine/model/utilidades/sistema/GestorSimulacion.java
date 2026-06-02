@@ -27,6 +27,7 @@ public class GestorSimulacion implements MotorSimulacion {
     private static final int USUARIOS_OBJETIVO = 5;
     private static final int VEHICULOS_MIN = 10;
     private static final int VEHICULOS_MAX = 15;
+    private static final int MAX_TICKS_SIN_RUTA = 10;
 
     private final SistemaViajes sistema;
     private final MapCanvas renderizador;
@@ -35,6 +36,7 @@ public class GestorSimulacion implements MotorSimulacion {
     private final Random rnd;
     private int contadorUsuarios;
     private int contadorVehiculos;
+    private int[] nodosValidos;
 
     /**
      * Construye el gestor de simulacion con las dependencias necesarias.
@@ -50,6 +52,47 @@ public class GestorSimulacion implements MotorSimulacion {
         this.rnd = new Random();
         this.contadorUsuarios = 0;
         this.contadorVehiculos = 0;
+        this.nodosValidos = precomputarNodosValidos();
+    }
+
+    /**
+     * Precomputa la lista de nodos que tienen al menos una arista saliente
+     * en el grafo dirigido. Se usa para teleportar vehiculos atascados.
+     * @return Arreglo con indices de nodos que tienen salida
+     */
+    private int[] precomputarNodosValidos() {
+        MatrizGrafo matriz = grafo.getMatrizCosto();
+        int orden = grafo.getOrden();
+        int count = 0;
+        for (int i = 0; i < orden; i++) {
+            for (int j = 0; j < orden; j++) {
+                if (i != j && matriz.areConnected(i, j)) {
+                    count++;
+                    break;
+                }
+            }
+        }
+        int[] validos = new int[count];
+        int idx = 0;
+        for (int i = 0; i < orden; i++) {
+            for (int j = 0; j < orden; j++) {
+                if (i != j && matriz.areConnected(i, j)) {
+                    validos[idx++] = i;
+                    break;
+                }
+            }
+        }
+        return validos;
+    }
+
+    /**
+     * Devuelve un nodo aleatorio que tenga al menos una arista saliente,
+     * o -1 si no existe ninguno.
+     * @return Indice de un nodo valido, o -1
+     */
+    private int obtenerNodoValidoAleatorio() {
+        if (nodosValidos.length == 0) return -1;
+        return nodosValidos[rnd.nextInt(nodosValidos.length)];
     }
 
     /**
@@ -119,18 +162,18 @@ public class GestorSimulacion implements MotorSimulacion {
                 int vecino = obtenerVecinoAleatorio(v.getNodoActual());
                 if (vecino != -1) {
                     v.setRutaActiva(new int[]{v.getNodoActual(), vecino});
+                    v.setTicksSinRuta(0);
                 } else {
-                    int nodo = -1;
-                    MatrizGrafo matriz = grafo.getMatrizCosto();
-                    for (int intentos = 0; intentos < 50; intentos++) {
-                        int candidato = rnd.nextInt(grafo.getOrden());
-                        if (candidato != v.getNodoActual() && matriz.areConnected(v.getNodoActual(), candidato)) {
-                            nodo = candidato;
-                            break;
+                    v.setTicksSinRuta(v.getTicksSinRuta() + 1);
+                    if (v.getTicksSinRuta() >= MAX_TICKS_SIN_RUTA) {
+                        int teleportDestino = obtenerNodoValidoAleatorio();
+                        if (teleportDestino != -1) {
+                            v.setNodoActual(teleportDestino);
+                            v.setNodoAnterior(teleportDestino);
+                            v.setProgreso(1.0);
+                            v.setRutaActiva(new int[0]);
+                            v.setTicksSinRuta(0);
                         }
-                    }
-                    if (nodo != -1) {
-                        v.setRutaActiva(new int[]{v.getNodoActual(), nodo});
                     }
                 }
             }
@@ -201,7 +244,12 @@ public class GestorSimulacion implements MotorSimulacion {
         if (idx >= ruta.length - 1) return;
 
         double peso = grafo.getMatrizCosto().devolver(ruta[idx], ruta[idx + 1]);
-        if (peso <= 0 || peso >= Double.POSITIVE_INFINITY) return;
+        if (peso <= 0 || peso >= Double.POSITIVE_INFINITY) {
+            if (v.isDisponible()) {
+                v.setRutaActiva(new int[0]);
+            }
+            return;
+        }
 
         double p = v.getProgreso() + 1.0 / peso;
         if (p >= 1.0) {

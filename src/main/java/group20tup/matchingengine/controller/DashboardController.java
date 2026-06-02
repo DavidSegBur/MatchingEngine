@@ -75,6 +75,8 @@ public class DashboardController {
     @FXML
     private Label lblVelocidad;
 
+    private VehiculoDisponibleController ventanaVehiculoActiva = null;
+
     private GrafoMapa grafoMapa;
     private ProyeccionMapa proyeccion;
     private MapCanvas renderizadorMapa;
@@ -302,16 +304,24 @@ public class DashboardController {
 
             // ── Abre la ventana flotante ────────────────────────────────────
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource(
-                    "/group20tup/matchingengine/fxml/vehiculoDisponible.fxml"));
+                if (ventanaVehiculoActiva != null) {
+                    ventanaVehiculoActiva.cerrar();
+                    ventanaVehiculoActiva = null;
+                }
+
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/group20tup/matchingengine/fxml/vehiculoDisponible.fxml"));
                 Parent root = loader.load();
 
                 VehiculoDisponibleController ctrl = loader.getController();
                 ctrl.setDatos(v.getPatente(), v.getNodoActual(), nodo.getNombreEsquina());
 
-                mostrarVentana(root, "Vehículo disponible", 320, 130);
-            } catch (Exception ex) { ex.printStackTrace();}
-        } else {
+                Stage ventana = mostrarVentana(root, "Vehículo disponible", 330, 180);
+                ctrl.setStage(ventana);
+                ventanaVehiculoActiva = ctrl;
+            } catch (Exception ex) { 
+                System.err.println("ERROR al abrir ventana: " + ex.getMessage());
+                ex.printStackTrace();}
+            } else {
             // ── Actualiza el panel lateral ──────────────────────────────────
             lblInfo.setText(String.format(
                     "Vehiculo: %s\nEstado: %s\nPosicion: nodo %d\nUbicacion: %s",
@@ -337,15 +347,13 @@ public class DashboardController {
      * de los vehículos y la Lista de los vehículos ocupados
      */
 
-    private void mostrarVentana(Parent root, String titulo, double width, double height) {
+    private Stage mostrarVentana(Parent root, String titulo, double width, double height) {
         Stage ventana = new Stage();
         ventana.setScene(new Scene(root));
         ventana.setTitle(titulo);
         ventana.initOwner(mapaCanvas.getScene().getWindow());
         ventana.initModality(Modality.NONE);
         ventana.setResizable(false);
-    
-        //tamaño de la ventana
         ventana.setWidth(width);
         ventana.setHeight(height);
 
@@ -354,6 +362,7 @@ public class DashboardController {
         ventana.setY(owner.getY() + (owner.getHeight() - height));
 
         ventana.show();
+        return ventana; // ← agregá esto
     }
 
     /**
@@ -521,6 +530,14 @@ public class DashboardController {
         mapaCanvas.setOnMouseDragged(DashboardController.this::onMouseDragged);
         mapaCanvas.setOnMouseClicked(DashboardController.this::onCanvasClick);
         mapaCanvas.setOnScroll(DashboardController.this::onScroll);
+        //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<INGRESO LISTENER PARA CERRAR VENTANA VEHICULO
+        mapaCanvas.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
+        if (ventanaVehiculoActiva != null) {
+            ventanaVehiculoActiva.cerrar();
+            ventanaVehiculoActiva = null;
+        }
+        });
+        //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     }
 
     private void construirSidePanel() {

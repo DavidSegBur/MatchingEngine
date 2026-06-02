@@ -9,7 +9,7 @@
 <?import javafx.scene.text.Font?>
 
 <StackPane style="-fx-background-color: white;"
-           xmlns="http://javafx.com/javafx/26"
+           xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="group20tup.matchingengine.controller.PantallaCargaController">
 
@@ -21,7 +21,7 @@
                  fitWidth="266"
                  preserveRatio="true"
                  pickOnBounds="true">
-          <image><Image url="@Images/Logo.png" /></image>
+          <image><Image url="@../images/Logo.png" /></image>
       </ImageView>
 
       <!-- Rectángulo negro → "BIENVENIDO A" en blanco -->

@@ -313,9 +313,9 @@ public class DashboardController {
                 Parent root = loader.load();
 
                 VehiculoDisponibleController ctrl = loader.getController();
-                ctrl.setDatos(v.getPatente(), v.getNodoActual(), nodo.getNombreEsquina());
+                ctrl.setDatos(v.getPatente(), v.getEstado().name(), v.getNodoActual(), nodo.getNombreEsquina());
 
-                Stage ventana = mostrarVentana(root, "Vehículo disponible", 330, 180);
+                Stage ventana = mostrarVentana(root, "Vehículo disponible", 350, 160);
                 ctrl.setStage(ventana);
                 ventanaVehiculoActiva = ctrl;
             } catch (Exception ex) { 

@@ -7,6 +7,7 @@ import javafx.stage.Stage;
 public class VehiculoDisponibleController {
 
     @FXML private Label vehiculoPatenteCatch;
+    @FXML private Label estadoLabel;
     @FXML private Label vehiculoPosicionCatch;
     @FXML private Label nombreCalleCath;
 
@@ -28,11 +29,13 @@ public class VehiculoDisponibleController {
     /**
      * Rellena los datos de la ventana con la información del vehículo disponible.
      * @param patente  Patente del vehículo     (atributo String de Vehiculo)
+     * @param estado   Estado del vehículo      (DISPONIBLE, APROXIMANDO, EN_VIAJE)
      * @param posicion Nodo actual del vehículo (int de Vehiculo)
      * @param calle    Nombre de la esquina     (atributo String de MetadataNodo)
      */
-    public void setDatos(String patente, int posicion, String calle) {
+    public void setDatos(String patente, String estado, int posicion, String calle) {
         vehiculoPatenteCatch.setText(patente);
+        estadoLabel.setText(estado);
         vehiculoPosicionCatch.setText(String.valueOf(posicion));
         nombreCalleCath.setText(calle);
     }

@@ -40,8 +40,8 @@ public class MapCanvas {
     private static final double USUARIO_RADIO = 5.0;
     private static final double PADDING = 30.0;
 
-    private static final double ANCHO_CALLE_CONTORNO = 5.0;
-    private static final double ANCHO_CALLE_RELLENO = 2.5;
+    private static final double ANCHO_CALLE_CONTORNO = 1.5; //<----------------------------------------------DAVID
+    private static final double ANCHO_CALLE_RELLENO = 0.7; //<-----------------------------------------------DAVID
 
     /**
      * Construye el renderizador asociado al canvas, grafo y proyeccion dados.
@@ -139,7 +139,7 @@ public class MapCanvas {
         capaFondo.dibujar(); //<-----------------------------------------------------------------------------------DAVID
 
         dibujarAristas(gc, tx, ty, tw, th);
-        dibujarNodos(gc, tx, ty, tw, th);
+        //dibujarNodos(gc, tx, ty, tw, th); <----------------------------------------------------------------------DAVID
     }
 
     /**
@@ -167,9 +167,9 @@ public class MapCanvas {
         }
     }
 
-    /**
+    /** <------------------------------------------------------------------------DAVID ELIMINA NODOS
      * Dibuja los nodos del grafo como circulos azules (intersecciones).
-     */
+    
     private void dibujarNodos(GraphicsContext gc, double tx, double ty, double tw, double th) {
         gc.setFill(Color.rgb(74, 144, 217, 0.7));
         for (int i = 0; i < grafo.getOrden(); i++) {

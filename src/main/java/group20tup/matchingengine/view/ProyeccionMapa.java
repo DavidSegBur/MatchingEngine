@@ -58,6 +58,8 @@ public class ProyeccionMapa {
         this.panX = 0.0;
         this.panY = 0.0;
         this.zoom = 1.0;
+
+        System.out.println("BBOX: " + minLat + "," + minLon + " / " + maxLat + "," + maxLon);
     }
 
     /**

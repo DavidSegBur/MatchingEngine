@@ -32,6 +32,7 @@ public class MapCanvas {
     private final GrafoMapa grafo;
     private final ProyeccionMapa proyeccion;
     private int[][] aristas;
+    private CapaFondoOSM capaFondo;
 
     private static final double NODO_RADIO = 2.5;
     private static final double RUTA_NODO_RADIO = 4.0;
@@ -52,6 +53,7 @@ public class MapCanvas {
         this.canvas = canvas;
         this.grafo = grafo;
         this.proyeccion = proyeccion;
+        this.capaFondo = new CapaFondoOSM(canvas, proyeccion); // ←------------------------------------------------------ DAVID
     }
 
     /**
@@ -134,7 +136,7 @@ public class MapCanvas {
         double tx = rect[0], ty = rect[1], tw = rect[2], th = rect[3];
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
-        gc.clearRect(0, 0, w, h);
+        capaFondo.dibujar(); //<-----------------------------------------------------------------------------------DAVID
 
         dibujarAristas(gc, tx, ty, tw, th);
         dibujarNodos(gc, tx, ty, tw, th);

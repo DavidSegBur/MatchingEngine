@@ -28,6 +28,7 @@ import javafx.scene.text.TextAlignment;
  * @version 2.0
  */
 public class MapCanvas {
+    private javafx.scene.image.Image imagenUsuario;
     private final Canvas canvas;
     private final GrafoMapa grafo;
     private final ProyeccionMapa proyeccion;
@@ -55,6 +56,13 @@ public class MapCanvas {
         this.grafo = grafo;
         this.proyeccion = proyeccion;
         this.capaFondo = new CapaFondoOSM(canvas, proyeccion); // ←------------------------------------------------------ DAVID
+         try {
+            imagenUsuario = new javafx.scene.image.Image(
+                getClass().getResourceAsStream(
+                "/group20tup/matchingengine/images/Usuario.png"));
+        } catch (Exception e) {
+            System.err.println("MapCanvas: no se pudo cargar Usuario.png");
+        }
     }
 
     /**
@@ -336,13 +344,18 @@ public class MapCanvas {
             Usuario u = (Usuario) usuarios.devolver(i);
             double[] p = proyectarNodo(u.getNodoOrigen(), tx, ty, tw, th);
 
-            gc.setFill(Color.MEDIUMVIOLETRED);
-            gc.fillOval(p[0] - USUARIO_RADIO, p[1] - USUARIO_RADIO,
-                    USUARIO_RADIO * 2, USUARIO_RADIO * 2);
-            gc.setStroke(Color.color(0.15, 0.15, 0.15));
-            gc.setLineWidth(1.5);
-            gc.strokeOval(p[0] - USUARIO_RADIO, p[1] - USUARIO_RADIO,
-                    USUARIO_RADIO * 2, USUARIO_RADIO * 2);
+            if (imagenUsuario != null && !imagenUsuario.isError()) {
+                double size = USUARIO_RADIO * 4;
+                gc.drawImage(imagenUsuario, p[0] - size / 2, p[1] - size / 2, size, size);
+            } else {
+                gc.setFill(Color.MEDIUMVIOLETRED);
+                gc.fillOval(p[0] - USUARIO_RADIO, p[1] - USUARIO_RADIO,
+                        USUARIO_RADIO * 2, USUARIO_RADIO * 2);
+                gc.setStroke(Color.color(0.15, 0.15, 0.15));
+                gc.setLineWidth(1.5);
+                gc.strokeOval(p[0] - USUARIO_RADIO, p[1] - USUARIO_RADIO,
+                        USUARIO_RADIO * 2, USUARIO_RADIO * 2);
+            }
         }
     }
 

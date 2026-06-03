@@ -33,8 +33,9 @@ public class MapCanvas {
     private final ProyeccionMapa proyeccion;
     private int[][] aristas;
     private CapaFondoOSM capaFondo;
+    private boolean capaFondoActiva = true;
 
-    private static final double NODO_RADIO = 2.5;
+    //private static final double NODO_RADIO = 2.5;
     private static final double RUTA_NODO_RADIO = 4.0;
     private static final double VEHICULO_RADIO = 6.0;
     private static final double USUARIO_RADIO = 5.0;
@@ -136,7 +137,11 @@ public class MapCanvas {
         double tx = rect[0], ty = rect[1], tw = rect[2], th = rect[3];
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
-        capaFondo.dibujar(); //<-----------------------------------------------------------------------------------DAVID
+        
+        if (capaFondoActiva) {
+                capaFondo.dibujar();
+        } else { gc.clearRect(0, 0, w, h);}  // fondo negro/transparente
+            
 
         dibujarAristas(gc, tx, ty, tw, th);
         //dibujarNodos(gc, tx, ty, tw, th); <----------------------------------------------------------------------DAVID
@@ -366,6 +371,15 @@ public class MapCanvas {
             }
         }
         return null;
+    }
+    
+    /**
+     * Boton activar y desactivar CapaFondo
+     */
+
+    public boolean toggleCapaFondo() {
+    capaFondoActiva = !capaFondoActiva;
+    return capaFondoActiva;
     }
 
     /**

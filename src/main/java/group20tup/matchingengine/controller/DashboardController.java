@@ -75,6 +75,8 @@ public class DashboardController {
     private Slider sliderVelocidad;
     @FXML
     private Label lblVelocidad;
+    @FXML
+    private Button btnToggleMapa;
 
     private VehiculoDisponibleController ventanaVehiculoActiva = null;
 
@@ -508,6 +510,11 @@ public class DashboardController {
         renderizadorMapa = new MapCanvas(mapaCanvas, mapa, proyeccion);
         renderizadorMapa.inicializar();
 
+        btnToggleMapa.setOnAction(evt -> {
+        boolean activo = renderizadorMapa.toggleCapaFondo();
+        btnToggleMapa.setText(activo ? "🗺 Mapa OSM" : "⬜ Mapa OSM");
+        });
+
         btnResetView.setOnAction(evt -> {
             proyeccion.resetView();
             renderizadorMapa.redibujar();
@@ -674,7 +681,7 @@ public class DashboardController {
     }
 
     private void agregarWidthListener(javafx.scene.Scene scene) {
-        scene.widthProperty().addListener(crearWidthListener());
+       scene.widthProperty().addListener(crearWidthListener());
     }
 
     /**

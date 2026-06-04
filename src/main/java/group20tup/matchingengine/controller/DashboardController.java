@@ -190,13 +190,19 @@ public class DashboardController {
                 double eta = sistema.calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
                 double distKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
                 double tarifa = sistema.calcularTarifa(eta);
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Viaje en curso");
-                alert.setHeaderText("Un vehiculo ya se dirige hacia el usuario");
-                alert.setContentText(String.format(
-                        "Vehiculo: %s\nETA: %.0f s\nDistancia: %.2f km\nTarifa: $%.2f",
-                        v.getPatente(), eta, distKm, tarifa));
-                alert.show();
+                try {
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("/group20tup/matchingengine/fxml/VehiculoSolicitado.fxml"));
+                    Parent root = loader.load();
+
+                    VehiculoSolicitadoController ctrl = loader.getController();
+                    ctrl.setDatos(v.getPatente(), eta, distKm, tarifa);
+
+                    Stage ventana = mostrarVentana(root, "Viaje asignado", 360, 230);
+                    ctrl.setStage(ventana);
+                    } catch (Exception ex) {
+                    System.err.println("ERROR al abrir VehiculoSolicitado: " + ex.getMessage());
+                    ex.printStackTrace();
+                }
                 mostrarInfoVehiculo(v);
                 return;
             }
@@ -267,13 +273,20 @@ public class DashboardController {
             double distanciaKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
             double tarifa = sistema.calcularTarifa(eta);
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Viaje asignado");
-            alert.setHeaderText("El vehiculo se dirige hacia el usuario");
-            alert.setContentText(String.format(
-                    "Vehiculo: %s\nETA: %.0f segundos\nDistancia: %.2f km\nTarifa: $%.2f",
-                    aceptado.getPatente(), eta, distanciaKm, tarifa));
-            alert.show();
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                        "/group20tup/matchingengine/fxml/VehiculoSolicitado.fxml"));
+                Parent root = loader.load();
+
+                VehiculoSolicitadoController ctrl = loader.getController();
+                ctrl.setDatos(aceptado.getPatente(), eta, distanciaKm, tarifa);
+
+                Stage ventana = mostrarVentana(root, "Viaje asignado", 360, 230);
+                ctrl.setStage(ventana);
+            } catch (Exception ex) {
+                System.err.println("ERROR al abrir VehiculoSolicitado: " + ex.getMessage());
+                ex.printStackTrace();
+            }
 
             lblInfo.setText(String.format(
                     "Viaje asignado\nVehiculo: %s\nETA: %.0f s\nDist: %.2f km\nTarifa: $%.2f",

@@ -82,6 +82,7 @@ public class DashboardController {
 
     private VehiculoDisponibleController ventanaVehiculoActiva = null;
     private Stage ventanaVehiculoSolicitadoActiva = null;
+    private Stage ventanaVehiculosOcupadosActiva = null;
 
     private GrafoMapa grafoMapa;
     private ProyeccionMapa proyeccion;
@@ -210,7 +211,10 @@ public class DashboardController {
                     System.err.println("ERROR al abrir VehiculoSolicitado: " + ex.getMessage());
                     ex.printStackTrace();
                 }
-                mostrarInfoVehiculo(v);
+                lblInfo.setText(String.format(
+                        "Vehiculo: %s\nEstado: %s\nPosicion: nodo %d\nUbicacion: %s",
+                        v.getPatente(), v.getEstado(), v.getNodoActual(),
+                        ((MetadataNodo) grafoMapa.getListaEsquinas().devolver(v.getNodoActual())).getNombreEsquina()));
                 return;
             }
         }
@@ -378,9 +382,54 @@ public class DashboardController {
             ex.printStackTrace();
         }
         } else {
-                lblInfo.setText(String.format("Vehiculo: %s\nEstado: %s\nPosicion: nodo %d\nUbicacion: %s", v.getPatente(), v.getEstado(), v.getNodoActual(), nodo.getNombreEsquina()));
-                lblBusyQueue.setText(sistema.obtenerTextoColaOcupados());
+            lblInfo.setText(String.format(
+                    "Vehiculo: %s\nEstado: %s\nPosicion: nodo %d\nUbicacion: %s",
+                    v.getPatente(), v.getEstado(), v.getNodoActual(), nodo.getNombreEsquina()));
+            lblBusyQueue.setText(sistema.obtenerTextoColaOcupados());
+
+            // Si la ventana ya está abierta, no hacer nada
+            if (ventanaVehiculosOcupadosActiva != null && ventanaVehiculosOcupadosActiva.isShowing()) {
+                return;
             }
+
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                        "/group20tup/matchingengine/fxml/ListaVehiculosOcupados.fxml"));
+                Parent root = loader.load();
+                ListaVehiculosOcupadosController ctrl = loader.getController();
+
+                List<ListaVehiculosOcupadosController.VehiculoOcupadoItem> items = new java.util.ArrayList<>();
+                for (int i = 0; i < sistema.totalVehiculos(); i++) {
+                    Vehiculo cand = sistema.getVehiculo(i);
+                    if (cand.getEstado() != EstadoVehiculo.DISPONIBLE) {
+                        MetadataNodo nodoC = (MetadataNodo) grafoMapa.getListaEsquinas().devolver(cand.getNodoActual());
+                        items.add(new ListaVehiculosOcupadosController.VehiculoOcupadoItem(
+                                cand.getPatente(),
+                                cand.getEstado().name(),
+                                cand.getNodoActual(),
+                                nodoC.getNombreEsquina()));
+                    }
+                }
+                ctrl.setVehiculos(items);
+
+                Stage owner = (Stage) mapaCanvas.getScene().getWindow();
+                ventanaVehiculosOcupadosActiva = new Stage();
+                ventanaVehiculosOcupadosActiva.setScene(new javafx.scene.Scene(root));
+                ventanaVehiculosOcupadosActiva.setTitle("Vehículos ocupados");
+                ventanaVehiculosOcupadosActiva.initOwner(owner);
+                ventanaVehiculosOcupadosActiva.initModality(javafx.stage.Modality.NONE);
+                ventanaVehiculosOcupadosActiva.setResizable(true);
+                ventanaVehiculosOcupadosActiva.setWidth(360);
+                ventanaVehiculosOcupadosActiva.setHeight(400);
+                ventanaVehiculosOcupadosActiva.setX(owner.getX() + (owner.getWidth() - 360) / 2);
+                ventanaVehiculosOcupadosActiva.setY(owner.getY() + owner.getHeight() * 0.25);
+                ctrl.setStage(ventanaVehiculosOcupadosActiva);
+                ventanaVehiculosOcupadosActiva.show();
+            } catch (Exception ex) {
+                System.err.println("ERROR al abrir ListaVehiculosOcupados: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        }
     }
 
     /**

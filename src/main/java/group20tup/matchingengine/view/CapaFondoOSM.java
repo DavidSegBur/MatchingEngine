@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
  
 /**
  * Renderiza una capa de fondo geográfico estilo cartográfico claro sobre un Canvas,
@@ -237,15 +238,17 @@ public class CapaFondoOSM {
         }
     }
  
+    private static final Set<String> TIPOS_CONOCIDOS = Set.of(
+            "residential", "unclassified", "service",
+            "tertiary", "tertiary_link",
+            "secondary", "secondary_link",
+            "primary", "primary_link",
+            "trunk", "trunk_link",
+            "motorway", "motorway_link",
+            "pedestrian", "footway", "cycleway");
+
     private boolean esDefault(String tipo) {
-        return !tipo.equals("residential") && !tipo.equals("unclassified") &&
-               !tipo.equals("service")     && !tipo.equals("tertiary")     &&
-               !tipo.equals("tertiary_link")&& !tipo.equals("secondary")   &&
-               !tipo.equals("secondary_link")&&!tipo.equals("primary")     &&
-               !tipo.equals("primary_link") && !tipo.equals("trunk")       &&
-               !tipo.equals("trunk_link")   && !tipo.equals("motorway")    &&
-               !tipo.equals("motorway_link")&& !tipo.equals("pedestrian")  &&
-               !tipo.equals("footway")      && !tipo.equals("cycleway");
+        return !TIPOS_CONOCIDOS.contains(tipo);
     }
 
     private void dibujarPoligonos(GraphicsContext gc, List<double[][]> poligonos, Color relleno, Color borde, double anchoBorde, double tx, double ty, double tw, double th) {

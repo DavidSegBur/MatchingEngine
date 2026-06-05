@@ -7,6 +7,17 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.util.List;
 
+/**
+ * Controlador de la ventana de lista de vehiculos ocupados.
+ * <p>
+ *     Muestra una lista de todos los vehiculos actualmente en estado
+ *     APROXIMANDO o EN_VIAJE, con su patente, estado, posicion y
+ *     ubicacion en la calle. Cada elemento se carga dinamicamente
+ *     desde VehiculoOcupadoL.fxml.
+ * </p>
+ * @author David
+ * @version 1.0
+ */
 public class ListaVehiculosOcupadosController {
 
     @FXML private VBox listaVehiculos;

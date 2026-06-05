@@ -39,14 +39,13 @@ public class MapCanvas {
     private CapaFondoOSM capaFondo;
     private boolean capaFondoActiva = true;
 
-    //private static final double NODO_RADIO = 2.5;
     private static final double RUTA_NODO_RADIO = 4.0;
     private static final double VEHICULO_RADIO = 6.0;
     private static final double USUARIO_RADIO = 5.0;
     private static final double PADDING = 30.0;
 
-    private static final double ANCHO_CALLE_CONTORNO = 1.5; //<----------------------------------------------DAVID
-    private static final double ANCHO_CALLE_RELLENO = 0.7; //<-----------------------------------------------DAVID
+    private static final double ANCHO_CALLE_CONTORNO = 1.5;
+    private static final double ANCHO_CALLE_RELLENO = 0.7;
 
     /**
      * Construye el renderizador asociado al canvas, grafo y proyeccion dados.
@@ -58,8 +57,8 @@ public class MapCanvas {
         this.canvas = canvas;
         this.grafo = grafo;
         this.proyeccion = proyeccion;
-        this.capaFondo = new CapaFondoOSM(canvas, proyeccion); // ←------------------------------------------------------ DAVID
-        try { //---------------------------------------------------------------------------------------------------------DAVID icono usuario
+        this.capaFondo = new CapaFondoOSM(canvas, proyeccion);
+        try {
             imagenUsuario = new javafx.scene.image.Image(
                 getClass().getResourceAsStream(
                 "/group20tup/matchingengine/images/Usuario.png"));
@@ -67,7 +66,7 @@ public class MapCanvas {
             System.err.println("MapCanvas: no se pudo cargar Usuario.png");
         }
 
-        try { //---------------------------------------------------------------------------------------------------------DAVID icono vehiculo
+        try {
         imagenVDisponible  = new javafx.scene.image.Image(
             getClass().getResourceAsStream("/group20tup/matchingengine/images/VDisponible.png"));
         imagenVAproximando = new javafx.scene.image.Image(
@@ -166,7 +165,6 @@ public class MapCanvas {
             
 
         dibujarAristas(gc, tx, ty, tw, th);
-        //dibujarNodos(gc, tx, ty, tw, th); <----------------------------------------------------------------------DAVID
     }
 
     /**
@@ -191,18 +189,6 @@ public class MapCanvas {
             double[] p1 = proyectarNodo(arista[0], tx, ty, tw, th);
             double[] p2 = proyectarNodo(arista[1], tx, ty, tw, th);
             gc.strokeLine(p1[0], p1[1], p2[0], p2[1]);
-        }
-    }
-
-    /** <------------------------------------------------------------------------DAVID ELIMINA NODOS
-     * Dibuja los nodos del grafo como circulos azules (intersecciones).
-    
-    private void dibujarNodos(GraphicsContext gc, double tx, double ty, double tw, double th) {
-        gc.setFill(Color.rgb(74, 144, 217, 0.7));
-        for (int i = 0; i < grafo.getOrden(); i++) {
-            double[] p = proyectarNodo(i, tx, ty, tw, th);
-            gc.fillOval(p[0] - NODO_RADIO, p[1] - NODO_RADIO,
-                    NODO_RADIO * 2, NODO_RADIO * 2);
         }
     }
 

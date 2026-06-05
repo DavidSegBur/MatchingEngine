@@ -314,6 +314,33 @@ public class SistemaViajes {
     }
 
     /**
+ * Devuelve los candidatos de despacho como array de double[][].
+ * Cada fila contiene: [indiceVehiculo, eta, distKm, tarifa].
+ * Ordenados por ETA ascendente (menor primero).
+ * @param usuario Usuario solicitante
+ * @return Array con los datos de cada candidato disponible
+ */
+    public String[][] getCandidatosDespacho(Usuario usuario) {
+        ColaPrioridadMonticulo cola = construirColaDespacho(usuario);
+        int n = cola.tamanio();
+        String[][] resultado = new String[n][4];
+        int i = 0;
+        while (!cola.estaVacia()) {
+            String patente = cola.extraerMinPatente();
+            Vehiculo v = buscarVehiculoPorPatente(patente);
+            if (v == null) continue;
+            double eta    = calcularETA(v.getNodoActual(), usuario.getNodoOrigen());
+            double distKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
+            double tarifa = calcularTarifa(eta);
+            resultado[i][0] = patente;
+            resultado[i][1] = String.valueOf(eta);
+            resultado[i][2] = String.valueOf(distKm);
+            resultado[i][3] = String.valueOf(tarifa);
+            i++;
+        }
+        return resultado;
+    }
+    /**
      * Genera el texto formateado de los candidatos restantes en la cola de
      * despacho activa, excluyendo los vehiculos que ya fueron procesados
      * (aceptaron o rechazaron).

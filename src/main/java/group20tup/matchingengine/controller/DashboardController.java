@@ -39,6 +39,8 @@ import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
+
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -250,10 +252,47 @@ public class DashboardController {
             return;
         }
 
+        // ── Abre ColaDespacho con candidatos DISPONIBLES ordenados por ETA ──
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/group20tup/matchingengine/fxml/ColaDespacho.fxml"));
+            Parent root = loader.load();
+            ColaDespachoController ctrl = loader.getController();
+
+            String[][] datos = sistema.getCandidatosDespacho(usuario);
+            List<ColaDespachoController.CandidatoCola> candidatos = new java.util.ArrayList<>();
+            for (String[] fila : datos) {
+                candidatos.add(new ColaDespachoController.CandidatoCola(
+                        fila[0],
+                        Double.parseDouble(fila[1]),
+                        Double.parseDouble(fila[2]),
+                        Double.parseDouble(fila[3])));
+            }
+            ctrl.setCandidatos(candidatos);
+
+            Stage owner = (Stage) mapaCanvas.getScene().getWindow();
+            Stage ventana = new Stage();
+            ventana.setScene(new Scene(root));
+            ventana.setTitle("Cola de despacho");
+            ventana.initOwner(owner);
+            ventana.initModality(Modality.NONE);
+            ventana.setResizable(true);
+            ventana.setWidth(340);
+            ventana.setHeight(400);
+            ventana.setX(owner.getX() + (owner.getWidth() - 340) / 2);
+            ventana.setY(owner.getY() + owner.getHeight() * 0.25);
+            ctrl.setStage(ventana);
+            ventana.show();
+        } catch (Exception ex) {
+            System.err.println("ERROR al abrir ColaDespacho: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+
         this.usuarioDespachando = usuario;
         lblInfo.setText("Buscando conductor...\n(0/" + sistema.getTotalCandidatosDespacho() + ")");
         pausaDespacho.play();
     }
+    
 
     /**
      * Procesa el siguiente candidato en el despacho asincronico.
@@ -309,54 +348,75 @@ public class DashboardController {
      * @param v Vehiculo a inspeccionar
      */
     private void mostrarInfoVehiculo(Vehiculo v) {
-        MetadataNodo nodo = (MetadataNodo) grafoMapa.getListaEsquinas().devolver(v.getNodoActual());
+    MetadataNodo nodo = (MetadataNodo) grafoMapa.getListaEsquinas().devolver(v.getNodoActual());
 
-        if (v.getEstado() == EstadoVehiculo.DISPONIBLE) {
-            // ── Actualiza el panel lateral ──────────────────────────────────
-            lblInfo.setText(String.format(
-                    "Vehiculo: %s\nEstado: DISPONIBLE\nPosicion: nodo %d\nUbicacion: %s",
-                    v.getPatente(), v.getNodoActual(), nodo.getNombreEsquina()));
-            lblBusyQueue.setText("");
+    if (v.getEstado() == EstadoVehiculo.DISPONIBLE) {
+        // ── Actualiza el panel lateral ──────────────────────────────────
+        lblInfo.setText(String.format(
+                "Vehiculo: %s\nEstado: DISPONIBLE\nPosicion: nodo %d\nUbicacion: %s",
+                v.getPatente(), v.getNodoActual(), nodo.getNombreEsquina()));
+        lblBusyQueue.setText("");
 
-            // ── Abre la ventana flotante ────────────────────────────────────
-            try {
-                if (ventanaVehiculoActiva != null) {
-                    ventanaVehiculoActiva.cerrar();
-                    ventanaVehiculoActiva = null;
-                }
+        // ── Abre la ventana flotante ────────────────────────────────────
+        try {
+            if (ventanaVehiculoActiva != null) {
+                ventanaVehiculoActiva.cerrar();
+                ventanaVehiculoActiva = null;
+            }
 
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/group20tup/matchingengine/fxml/vehiculoDisponible.fxml"));
-                Parent root = loader.load();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                    "/group20tup/matchingengine/fxml/vehiculoDisponible.fxml"));
+            Parent root = loader.load();
 
-                VehiculoDisponibleController ctrl = loader.getController();
-                ctrl.setDatos(v.getPatente(), v.getEstado().name(), v.getNodoActual(), nodo.getNombreEsquina());
+            VehiculoDisponibleController ctrl = loader.getController();
+            ctrl.setDatos(v.getPatente(), v.getEstado().name(), v.getNodoActual(), nodo.getNombreEsquina());
 
-                Stage ventana = mostrarVentana(root, "Vehículo disponible", 350, 160);
-                ctrl.setStage(ventana);
-                ventanaVehiculoActiva = ctrl;
-            } catch (Exception ex) { 
-                System.err.println("ERROR al abrir ventana: " + ex.getMessage());
-                ex.printStackTrace();}
-            } else {
+            Stage ventana = mostrarVentana(root, "Vehículo disponible", 350, 160);
+            ctrl.setStage(ventana);
+            ventanaVehiculoActiva = ctrl;
+        } catch (Exception ex) {
+            System.err.println("ERROR al abrir ventana: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+     } else {
             // ── Actualiza el panel lateral ──────────────────────────────────
             lblInfo.setText(String.format(
                     "Vehiculo: %s\nEstado: %s\nPosicion: nodo %d\nUbicacion: %s",
                     v.getPatente(), v.getEstado(), v.getNodoActual(), nodo.getNombreEsquina()));
             lblBusyQueue.setText(sistema.obtenerTextoColaOcupados());
-            // ── Abre la ventana flotante ────────────────────────────────────
-           /*try {
+
+            // ── Abre la ventana flotante con cola de despacho ───────────────
+            try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource(
-                    "/group20tup/matchingengine/fxml/ventana-vehiculo-ocupado.fxml"));
+                        "/group20tup/matchingengine/fxml/ColaDespacho.fxml"));
                 Parent root = loader.load();
 
-                VentanaVehiculoOcupadoController ctrl = loader.getController();
-                ctrl.setDatos(v.getPatente(), v.getEstado().toString(),
-                            v.getNodoActual(), nodo.getNombreEsquina(),
-                            sistema.obtenerTextoColaOcupados());
-                mostrarVentana(root, "Vehículo ocupado", 00, 00); //revisar para que quede centrada borde inferior
-            } catch (Exception ex) {ex.printStackTrace();}*/
+                ColaDespachoController ctrl = loader.getController();
+
+                List<ColaDespachoController.CandidatoCola> candidatos = new java.util.ArrayList<>();
+                for (int i = 0; i < sistema.totalVehiculos(); i++) {
+                    Vehiculo cand = sistema.getVehiculo(i);
+                    if (cand.getEstado() != EstadoVehiculo.DISPONIBLE) {
+                        double eta    = sistema.calcularETA(cand.getNodoActual(), v.getNodoActual());
+                        double distKm = eta * GrafoMapa.VELOCIDAD_PROMEDIO_M_S / 1000.0;
+                        double tarifa = sistema.calcularTarifa(eta);
+                        candidatos.add(new ColaDespachoController.CandidatoCola(
+                                cand.getPatente(), eta, distKm, tarifa));
+                    }
+                }
+                candidatos.sort((a, b) -> Double.compare(a.etaSeg, b.etaSeg));
+
+                ctrl.setCandidatos(candidatos);
+
+                double altura = Math.min(candidatos.size(), 5) * 110.0 + 35.0;
+                Stage ventana = mostrarVentana(root, "Cola de despacho", 340, altura);
+                ctrl.setStage(ventana);
+            } catch (Exception ex) {
+                System.err.println("ERROR al abrir ColaDespacho: " + ex.getMessage());
+                ex.printStackTrace();
+            }
         }
-    }
+        }
 
     /**
      * Método para crear las ventanas para mostrar en pantalla la información
